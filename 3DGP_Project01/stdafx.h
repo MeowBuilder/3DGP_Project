@@ -15,6 +15,8 @@
 #include <memory.h>
 #include <tchar.h>
 #include <math.h>
+#include <string>
+#include <vector>
 
 #include <Mmsystem.h>
 #pragma comment(lib, "winmm.lib")
@@ -27,8 +29,8 @@
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-#define FRAMEBUFFER_WIDTH		640
-#define FRAMEBUFFER_HEIGHT		480
+#define FRAMEBUFFER_WIDTH		1280
+#define FRAMEBUFFER_HEIGHT		960
 
 #define DIR_FORWARD				0x01
 #define DIR_BACKWARD			0x02

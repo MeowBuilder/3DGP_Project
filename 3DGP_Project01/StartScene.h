@@ -1,26 +1,23 @@
 #pragma once
 
-#include "stdafx.h"
-#include "GameObject.h"
-#include "Camera.h"
-#include "Player.h"
-#include "GraphicsPipeline.h"
+#include "Scene.h"
 
-class CScene
+class CStartScene : public CScene
 {
 public:
-	CScene(CPlayer* pPlayer);
-	virtual ~CScene();
+	CStartScene(CPlayer* pPlayer);
+	virtual ~CStartScene();
 
 private:
 	int m_nObjects = 0;
 	CGameObject** m_ppObjects = NULL;
 
-	CWallsObject* m_pWallsObject = NULL;
-
-	CPlayer* m_pPlayer = NULL;
+	CCamera* m_pSceneCamera = nullptr;
 
 	CGameObject* m_pLockedObject = NULL;
+
+	
+	std::vector<CTextObject3D*> m_pTextObjects;
 
 #ifdef _WITH_DRAW_AXIS
 	CGameObject* m_pWorldAxis = NULL;
@@ -36,10 +33,11 @@ public:
 	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-	virtual void ProcessInput(UCHAR* pKeyBuffer); // 키보드 이동
-	virtual void ProcessMouseInput(float dx, float dy, bool bRightButton); // 마우스 회전
+	void CStartScene::ProcessInput(UCHAR* pKeyBuffer) { /* 입력 없음 */ }
+	void CStartScene::ProcessMouseInput(float dx, float dy, bool bRightButton) { /* 회전 없음 */ }
 
-	virtual void UpdateCamera(float fElapsedTime);
+	virtual void UpdateCamera(float fElapsedTime) override;
 
 	virtual CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
 };
+

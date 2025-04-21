@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "GameObject.h"
 #include "GraphicsPipeline.h"
+#include "TextGlyphTable.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -352,7 +353,7 @@ void CBulletObject::Animate(float fElapsedTime)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+
 void CAxisObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 {
 	CGraphicsPipeline::SetWorldTransform(&m_xmf4x4World);
@@ -360,3 +361,180 @@ void CAxisObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 	m_pMesh->Render(hDCFrameBuffer);
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CTextCharacterObject::CTextCharacterObject(wchar_t ch)
+{
+	BuildCharacterShape(ch);
+}
+
+CTextCharacterObject::~CTextCharacterObject()
+{
+	ReleaseMesh();
+	for (auto cube : m_Cubes) {
+		delete cube;
+	}
+	m_Cubes.clear();
+}
+
+void CTextCharacterObject::BuildCharacterShape(wchar_t ch)
+{
+	PrepareMesh();
+
+	auto AddCube = [&](int x, int y)
+		{
+			CGameObject* pCube = new CGameObject();
+			pCube->SetMesh(m_pSharedCubeMesh);
+			pCube->SetPosition((float)x, (float)y, 0.0f);
+			m_Cubes.push_back(pCube);
+		};
+
+	const wchar_t** shape = GetGlyph(ch);
+	if (!shape) return;
+
+	for (int y = 0; y < GLYPH_HEIGHT; ++y)
+	{
+		const wchar_t* line = shape[GLYPH_HEIGHT - 1 - y]; // top line → y=6
+		for (int x = 0; x < GLYPH_WIDTH; ++x)
+		{
+			if (line[x] == L'#')
+			{
+				AddCube(x, y);
+			}
+		}
+	}
+
+	// 중심 정렬 보정 (선택사항)
+	for (auto& cube : m_Cubes) {
+		XMFLOAT3 pos = cube->GetPosition();
+		pos.x -= 3.0f; // 중심 맞추기
+		pos.y -= 3.0f;
+		cube->SetPosition(pos);
+	}
+}
+
+CCubeMesh* CTextCharacterObject::m_pSharedCubeMesh = nullptr;
+
+void CTextCharacterObject::PrepareMesh()
+{
+	if (!m_pSharedCubeMesh) {
+		m_pSharedCubeMesh = new CCubeMesh(1.0f, 1.0f, 1.0f);
+	}
+	else {
+		m_pSharedCubeMesh->AddRef();
+	}
+}
+
+void CTextCharacterObject::ReleaseMesh()
+{
+	if (m_pSharedCubeMesh) {
+		m_pSharedCubeMesh->Release();
+		m_pSharedCubeMesh = nullptr;
+	}
+}
+
+
+void CTextCharacterObject::Animate(float fElapsedTime)
+{
+	for (auto cube : m_Cubes)
+		cube->Animate(fElapsedTime);
+}
+
+void CTextCharacterObject::Render(HDC hDCFrameBuffer, CCamera* pCamera, const XMFLOAT3& parentOffset)
+{
+	for (auto cube : m_Cubes)
+	{
+		XMFLOAT3 cubeLocal = cube->GetPosition();
+		XMFLOAT3 rotatedLocal = Vector3::TransformCoord(cubeLocal, m_xmf4x4Rotation);
+		XMFLOAT3 finalPos = Vector3::Add(parentOffset, rotatedLocal);
+
+		XMFLOAT4X4 world = Matrix4x4::Identity();
+		world._41 = finalPos.x;
+		world._42 = finalPos.y;
+		world._43 = finalPos.z;
+
+		cube->Render(hDCFrameBuffer, &world, m_pSharedCubeMesh);
+	}
+}
+
+void CTextCharacterObject::SetColor(COLORREF color)
+{
+	for (auto cube : m_Cubes)
+		cube->SetColor(color);
+}
+
+CTextObject3D::CTextObject3D(const std::wstring& text)
+{
+	SetText(text);
+}
+
+CTextObject3D::~CTextObject3D()
+{
+	for (auto& ch : m_Characters) {
+		delete ch;
+	}
+	m_Characters.clear();
+}
+
+void CTextObject3D::SetText(const std::wstring& text)
+{
+	float xOffset = 0.0f;
+	const float spacing = 8.0f; // 글자 간 간격 (7x7 기준 + 여유)
+
+	for (wchar_t ch : text)
+	{
+		CTextCharacterObject* pChar = new CTextCharacterObject(ch);
+		pChar->SetPosition(XMFLOAT3(xOffset, 0.0f, 0.0f));  // 각 글자의 기준 위치
+		xOffset += spacing;
+		m_Characters.push_back(pChar);
+	}
+}
+
+void CTextObject3D::SetColor(COLORREF color)
+{
+	m_dwColor = color;
+	for (auto& ch : m_Characters)
+		ch->SetColor(color);
+}
+
+void CTextObject3D::Animate(float fElapsedTime)
+{
+	m_fRotationAngle += 45.0f * fElapsedTime;
+	for (auto& ch : m_Characters)
+		ch->Animate(fElapsedTime);
+}
+
+void CTextObject3D::Render(HDC hDCFrameBuffer, CCamera* pCamera)
+{
+	// 1. 텍스트 중심점 계산 (중앙 문자 기준 + 깊이 보정)
+	XMFLOAT3 center = { 0, 0, 0 };
+	if (!m_Characters.empty())
+	{
+		size_t mid = m_Characters.size() / 2;
+		center = m_Characters[mid]->GetPosition();
+	}
+
+	// 2. 회전 행렬 생성
+	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3RotationAxis), XMConvertToRadians(m_fRotationAngle));
+	XMMATRIX mtxTransToOrigin = XMMatrixTranslation(-center.x, -center.y, -center.z);
+	XMMATRIX mtxTransBack = XMMatrixTranslation(center.x, center.y, center.z);
+	XMMATRIX mtxWorld = mtxTransToOrigin * mtxRotate * mtxTransBack;
+
+	XMFLOAT3 basePos = GetPosition();
+
+	XMFLOAT4X4 xmf4Rotation;
+	XMStoreFloat4x4(&xmf4Rotation, mtxRotate);
+
+	for (auto ch : m_Characters)
+	{
+		XMFLOAT3 charLocal = ch->GetPosition();
+		XMVECTOR vLocal = XMVectorSet(charLocal.x, charLocal.y, charLocal.z, 1.0f);
+		XMVECTOR vWorld = XMVector3TransformCoord(vLocal, mtxWorld);
+
+		XMFLOAT3 rotatedCharPos;
+		XMStoreFloat3(&rotatedCharPos, XMVectorAdd(vWorld, XMLoadFloat3(&basePos)));
+
+		ch->SetRotationMatrix(xmf4Rotation); // 회전 행렬 전달
+		ch->Render(hDCFrameBuffer, pCamera, rotatedCharPos);
+	}
+}

@@ -142,3 +142,43 @@ public:
 
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
 };
+
+class CTextCharacterObject : public CGameObject {
+public:
+	static CCubeMesh* m_pSharedCubeMesh;
+	std::vector<CGameObject*> m_Cubes;
+
+	CTextCharacterObject(wchar_t ch);
+	virtual ~CTextCharacterObject();
+
+	void SetColor(COLORREF color);
+
+	void PrepareMesh();
+	void ReleaseMesh();
+	void BuildCharacterShape(wchar_t ch); // 글자를 큐브들로 구성
+
+	virtual void Animate(float fElapsedTime) override;
+	void Render(HDC hDCFrameBuffer, CCamera* pCamera, const XMFLOAT3& parentOffset) ;
+	void SetRotationMatrix(const XMFLOAT4X4& xmf4x4Rotation) { m_xmf4x4Rotation = xmf4x4Rotation; }
+
+private:
+	XMFLOAT4X4 m_xmf4x4Rotation = Matrix4x4::Identity();
+};
+
+class CTextObject3D : public CGameObject {
+public:
+	std::vector<CTextCharacterObject*> m_Characters;
+
+	CTextObject3D(const std::wstring& text);
+	virtual ~CTextObject3D();
+
+	void SetText(const std::wstring& text);
+	void SetColor(COLORREF color);
+
+	virtual void Animate(float fElapsedTime) override;
+	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera) override;
+
+protected:
+	float m_fRotationAngle = 0.0f;          // 누적 회전 각도
+	XMFLOAT3 m_xmf3RotationAxis = { 0,1,0 }; // Y축 기준 회전
+};
