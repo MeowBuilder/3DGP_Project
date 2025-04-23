@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "Camera.h"
+#include <algorithm>
 
 class CGameObject
 {
@@ -28,6 +29,8 @@ public:
 	float						m_fRotationSpeed = 0.0f;
 
 public:
+	BoundingOrientedBox GetOOBB() const { return m_xmOOBB; };
+
 	void SetActive(bool bActive) { m_bActive = bActive; }
 	void SetMesh(CMesh* pMesh) { m_pMesh = pMesh; if (pMesh) pMesh->AddRef(); }
 
@@ -70,7 +73,7 @@ public:
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
 
 	void GenerateRayForPicking(XMVECTOR& xmvPickPosition, XMMATRIX& xmmtxView, XMVECTOR& xmvPickRayOrigin, XMVECTOR& xmvPickRayDirection);
-	int PickObjectByRayIntersection(XMVECTOR& xmPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance);
+	virtual int PickObjectByRayIntersection(XMVECTOR& xmPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance);
 };
 
 class CExplosiveObject : public CGameObject
@@ -87,6 +90,8 @@ public:
 	float						m_fDuration = 2.0f;
 	float						m_fExplosionSpeed = 10.0f;
 	float						m_fExplosionRotation = 720.0f;
+
+	CGameObject* m_pParentObject = nullptr;
 
 	virtual void Animate(float fElapsedTime);
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
@@ -145,8 +150,9 @@ public:
 
 class CTextCharacterObject : public CGameObject {
 public:
-	static CCubeMesh* m_pSharedCubeMesh;
 	std::vector<CGameObject*> m_Cubes;
+
+	static CCubeMesh* m_pSharedCubeMesh;
 
 	CTextCharacterObject(wchar_t ch);
 	virtual ~CTextCharacterObject();
@@ -159,18 +165,22 @@ public:
 
 	virtual void Animate(float fElapsedTime) override;
 	void Render(HDC hDCFrameBuffer, CCamera* pCamera, const XMFLOAT3& parentOffset) ;
+
 	void SetRotationMatrix(const XMFLOAT4X4& xmf4x4Rotation) { m_xmf4x4Rotation = xmf4x4Rotation; }
 
+	virtual int PickObjectByRayIntersection(XMVECTOR& xmPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance, const XMFLOAT3& parentOffset);
 private:
 	XMFLOAT4X4 m_xmf4x4Rotation = Matrix4x4::Identity();
 };
 
 class CTextObject3D : public CGameObject {
 public:
-	std::vector<CTextCharacterObject*> m_Characters;
 
 	CTextObject3D(const std::wstring& text);
 	virtual ~CTextObject3D();
+
+	void SetTargetSceneID(int nSceneID) { m_nTargetSceneID = nSceneID; }
+	int GetTargetSceneID() const { return m_nTargetSceneID; }
 
 	void SetText(const std::wstring& text);
 	void SetColor(COLORREF color);
@@ -178,7 +188,20 @@ public:
 	virtual void Animate(float fElapsedTime) override;
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera) override;
 
-protected:
+	virtual int PickObjectByRayIntersection(XMVECTOR& xmPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance);
+
+	XMFLOAT3 getCenter() const {
+		XMFLOAT3 center = { 0, 0, 0 };
+		if (!m_Characters.empty())
+		{
+			size_t mid = m_Characters.size() / 2;
+			center = m_Characters[mid]->GetPosition();
+		}
+		return center;
+	}
+
+private:
 	float m_fRotationAngle = 0.0f;          // 누적 회전 각도
-	XMFLOAT3 m_xmf3RotationAxis = { 0,1,0 }; // Y축 기준 회전
+	std::vector<CTextCharacterObject*> m_Characters;
+	int m_nTargetSceneID = -1; // 기본: 전환 없음
 };

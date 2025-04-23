@@ -433,7 +433,6 @@ void CTextCharacterObject::ReleaseMesh()
 	}
 }
 
-
 void CTextCharacterObject::Animate(float fElapsedTime)
 {
 	for (auto cube : m_Cubes)
@@ -462,6 +461,35 @@ void CTextCharacterObject::SetColor(COLORREF color)
 	for (auto cube : m_Cubes)
 		cube->SetColor(color);
 }
+
+int CTextCharacterObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance, const XMFLOAT3& parentOffset)
+{
+	int nIntersected = 0;
+
+	for (auto& cube : m_Cubes)  // 각 큐브에 대해 레이와의 교차 여부를 검사
+	{
+		// 레이와의 교차 여부 검사
+
+		XMFLOAT3 cubeLocal = cube->GetPosition();
+		XMFLOAT3 rotatedLocal = Vector3::TransformCoord(cubeLocal, m_xmf4x4Rotation);
+		XMFLOAT3 finalPos = Vector3::Add(parentOffset, rotatedLocal);
+
+		XMFLOAT4X4 world = Matrix4x4::Identity();
+		world._41 = finalPos.x;
+		world._42 = finalPos.y;
+		world._43 = finalPos.z;
+
+		cube->SetPosition(finalPos);
+		nIntersected = cube->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, pfHitDistance);
+		cube->SetPosition(cubeLocal);
+
+		if (nIntersected > 0) break;  // 교차가 일어나면 바로 반환
+	}
+
+	return nIntersected;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CTextObject3D::CTextObject3D(const std::wstring& text)
 {
@@ -499,6 +527,8 @@ void CTextObject3D::SetColor(COLORREF color)
 
 void CTextObject3D::Animate(float fElapsedTime)
 {
+	if (!m_bActive) return;
+
 	m_fRotationAngle += 45.0f * fElapsedTime;
 	for (auto& ch : m_Characters)
 		ch->Animate(fElapsedTime);
@@ -506,6 +536,8 @@ void CTextObject3D::Animate(float fElapsedTime)
 
 void CTextObject3D::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 {
+	if (!m_bActive) return;
+
 	// 1. 텍스트 중심점 계산 (중앙 문자 기준 + 깊이 보정)
 	XMFLOAT3 center = { 0, 0, 0 };
 	if (!m_Characters.empty())
@@ -537,4 +569,37 @@ void CTextObject3D::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		ch->SetRotationMatrix(xmf4Rotation); // 회전 행렬 전달
 		ch->Render(hDCFrameBuffer, pCamera, rotatedCharPos);
 	}
+}
+
+int CTextObject3D::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance)
+{
+	if (!m_bActive) return 0;
+
+	// 1. 텍스트 중심점 계산 (중앙 문자 기준 + 깊이 보정)
+	XMFLOAT3 center = getCenter();
+
+	// 2. 회전 행렬 생성
+	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3RotationAxis), XMConvertToRadians(m_fRotationAngle));
+	XMMATRIX mtxTransToOrigin = XMMatrixTranslation(-center.x, -center.y, -center.z);
+	XMMATRIX mtxTransBack = XMMatrixTranslation(center.x, center.y, center.z);
+	XMMATRIX mtxWorld = mtxTransToOrigin * mtxRotate * mtxTransBack;
+
+	XMFLOAT3 basePos = GetPosition();
+
+	int nIntersected = 0;
+
+	for (auto ch : m_Characters)
+	{
+		XMFLOAT3 charLocal = ch->GetPosition();
+		XMVECTOR vLocal = XMVectorSet(charLocal.x, charLocal.y, charLocal.z, 1.0f);
+		XMVECTOR vWorld = XMVector3TransformCoord(vLocal, mtxWorld);
+
+		XMFLOAT3 rotatedCharPos;
+		XMStoreFloat3(&rotatedCharPos, XMVectorAdd(vWorld, XMLoadFloat3(&basePos)));
+
+		nIntersected = ch->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, pfHitDistance, rotatedCharPos);
+		if (nIntersected > 0) return nIntersected;  // 교차가 일어난 오브젝트 반환
+	}
+
+	return nIntersected;  // 교차하지 않으면 0 반환
 }

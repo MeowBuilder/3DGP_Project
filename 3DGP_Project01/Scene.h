@@ -9,18 +9,13 @@
 class CScene
 {
 public:
-	CScene(CPlayer* pPlayer);
+	CScene();
 	virtual ~CScene();
 
 private:
-	int m_nObjects = 0;
-	CGameObject** m_ppObjects = NULL;
-
-	CWallsObject* m_pWallsObject = NULL;
-
 	CPlayer* m_pPlayer = NULL;
 
-	CGameObject* m_pLockedObject = NULL;
+	int m_nNextSceneID = -1;
 
 #ifdef _WITH_DRAW_AXIS
 	CGameObject* m_pWorldAxis = NULL;
@@ -31,7 +26,7 @@ public:
 	virtual void ReleaseObjects();
 
 	virtual void Animate(float fElapsedTime);
-	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+	virtual void Render(HDC hDCFrameBuffer);
 
 	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
@@ -41,5 +36,10 @@ public:
 
 	virtual void UpdateCamera(float fElapsedTime);
 
-	virtual CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
+	virtual bool IsFinished() const { return false; } // ±âº»Àº false
+
+	virtual int GetNextSceneID() const
+	{
+		return m_nNextSceneID;
+	}
 };

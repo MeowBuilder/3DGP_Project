@@ -16,12 +16,18 @@ void CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 
 	BuildObjects();
 
+	m_pSceneManager = new CSceneManager();
+	m_pSceneManager->SetCurrentScene(new CStartScene());
+
 	_tcscpy_s(m_pszFrameRate, _T("LabProject ("));
 }
 
 void CGameFramework::OnDestroy()
 {
-	ReleaseObjects();
+	if (m_pSceneManager) {
+		delete m_pSceneManager;
+		m_pSceneManager = nullptr;
+	}
 
 	if (m_hBitmapFrameBuffer) ::DeleteObject(m_hBitmapFrameBuffer);
 	if (m_hDCFrameBuffer) ::DeleteDC(m_hDCFrameBuffer);
@@ -63,40 +69,15 @@ void CGameFramework::PresentFrameBuffer()
 
 void CGameFramework::BuildObjects()
 {
-	CCamera* pCamera = new CCamera();
-	pCamera->SetViewport(0, 0, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-	pCamera->GeneratePerspectiveProjectionMatrix(1.01f, 500.0f, 60.0f);
-	pCamera->SetFOVAngle(60.0f);
-
-	pCamera->GenerateOrthographicProjectionMatrix(1.01f, 50.0f, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-
-	CAirplaneMesh* pAirplaneMesh = new CAirplaneMesh(6.0f, 6.0f, 1.0f);
-
-	m_pPlayer = new CAirplanePlayer();
-	m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f);
-	m_pPlayer->SetMesh(pAirplaneMesh);
-	m_pPlayer->SetColor(RGB(0, 0, 255));
-	m_pPlayer->SetCamera(pCamera);
-	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 5.0f, -15.0f));
-
-	m_pScene = new CStartScene(m_pPlayer);
-	m_pScene->BuildObjects();
 }
 
 void CGameFramework::ReleaseObjects()
 {
-	if (m_pScene)
-	{
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-	}
-
-	if (m_pPlayer) delete m_pPlayer;
 }
 
 void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) m_pScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
+	if (m_pSceneManager) m_pSceneManager->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 
 	switch (nMessageID)
 	{
@@ -117,7 +98,7 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 
 void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) m_pScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+	if (m_pSceneManager) m_pSceneManager->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 }
 
 LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -154,7 +135,8 @@ void CGameFramework::ProcessInput()
 	static UCHAR pKeyBuffer[256];
 	if (GetKeyboardState(pKeyBuffer))
 	{
-		if (m_pScene) m_pScene->ProcessInput(pKeyBuffer); // 씬에게 위임
+		if (m_pSceneManager && m_pSceneManager->GetCurrentScene())
+			m_pSceneManager->GetCurrentScene()->ProcessInput(pKeyBuffer);
 	}
 
 	if (GetCapture() == m_hWnd)
@@ -169,16 +151,19 @@ void CGameFramework::ProcessInput()
 		if (dx || dy)
 		{
 			bool bRight = (pKeyBuffer[VK_RBUTTON] & 0xF0) != 0;
-			if (m_pScene) m_pScene->ProcessMouseInput(dx, dy, bRight); // 씬에게 위임
+			if (m_pSceneManager && m_pSceneManager->GetCurrentScene())
+				m_pSceneManager->GetCurrentScene()->ProcessMouseInput(dx, dy, bRight);
 		}
 	}
 }
 
 void CGameFramework::AnimateObjects()
 {
-	float fTimeElapsed = m_GameTimer.GetTimeElapsed();
-	if (m_pScene) m_pScene->UpdateCamera(fTimeElapsed);
-	if (m_pScene) m_pScene->Animate(fTimeElapsed);
+ float fTimeElapsed = m_GameTimer.GetTimeElapsed();
+    if (m_pSceneManager) {
+		m_pSceneManager->UpdateCamera(fTimeElapsed);
+		m_pSceneManager->Animate(fTimeElapsed);
+    }
 }
 
 void CGameFramework::FrameAdvance()
@@ -191,8 +176,9 @@ void CGameFramework::FrameAdvance()
 
 	ClearFrameBuffer(RGB(255, 255, 255));
 
-	CCamera* pCamera = m_pPlayer->GetCamera();
-	if (m_pScene) m_pScene->Render(m_hDCFrameBuffer, pCamera);
+	if (m_pSceneManager) {
+		m_pSceneManager->Render(m_hDCFrameBuffer);
+	}
 
 	PresentFrameBuffer();
 
