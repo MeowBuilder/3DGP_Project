@@ -6,7 +6,7 @@ class CStartScene : public CScene
 {
 public:
 	CStartScene();
-	virtual ~CStartScene();
+	~CStartScene();
 
 private:
 	CPlayer* m_pPlayer = NULL;

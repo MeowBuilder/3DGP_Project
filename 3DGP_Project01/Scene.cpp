@@ -7,6 +7,7 @@ CScene::CScene()
 
 CScene::~CScene()
 {
+	ReleaseObjects();
 }
 
 void CScene::BuildObjects()
@@ -54,6 +55,22 @@ void CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam,
 
 void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
+	switch (nMessageID)
+	{
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_ESCAPE:
+			m_nNextSceneID = 0;
+			m_bSceneFinished = true;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 void CScene::ProcessInput(UCHAR* pKeyBuffer)
@@ -82,11 +99,13 @@ void CScene::Animate(float fElapsedTime)
 void CScene::Render(HDC hDCFrameBuffer)
 {
 	CCamera* pCamera = m_pPlayer->GetCamera();
+
 	CGraphicsPipeline::SetViewport(&pCamera->m_Viewport);
 
 	CGraphicsPipeline::SetViewPerspectiveProjectTransform(&pCamera->m_xmf4x4ViewPerspectiveProject);
 
 	if (m_pPlayer) m_pPlayer->Render(hDCFrameBuffer, pCamera);
+
 #ifdef _WITH_DRAW_AXIS
 	CGraphicsPipeline::SetViewOrthographicProjectTransform(&pCamera->m_xmf4x4ViewOrthographicProject);
 	m_pWorldAxis->SetRotationTransform(&m_pPlayer->m_xmf4x4World);

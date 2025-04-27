@@ -17,6 +17,8 @@ private:
 
 	int m_nNextSceneID = -1;
 
+	bool m_bSceneFinished = false;
+
 #ifdef _WITH_DRAW_AXIS
 	CGameObject* m_pWorldAxis = NULL;
 #endif
@@ -36,10 +38,7 @@ public:
 
 	virtual void UpdateCamera(float fElapsedTime);
 
-	virtual bool IsFinished() const { return false; } // ±âº»Àº false
+	virtual bool IsFinished() const { return m_bSceneFinished; }
 
-	virtual int GetNextSceneID() const
-	{
-		return m_nNextSceneID;
-	}
+	virtual int GetNextSceneID() const { return m_nNextSceneID; }
 };

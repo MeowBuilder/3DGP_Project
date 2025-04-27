@@ -52,6 +52,16 @@ inline bool IsEqual(float fA, float fB) { return(::IsZero(fA - fB)); }
 
 namespace Vector3
 {
+	// 직접 추가 (선형 보간)
+	inline XMFLOAT3 Lerp(const XMFLOAT3& a, const XMFLOAT3& b, float t)
+	{
+		return XMFLOAT3(
+			a.x + (b.x - a.x) * t,
+			a.y + (b.y - a.y) * t,
+			a.z + (b.z - a.z) * t
+		);
+	}
+
 	inline XMFLOAT3 XMVectorToFloat3(XMVECTOR& xmvVector)
 	{
 		XMFLOAT3 xmf3Result;

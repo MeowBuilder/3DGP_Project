@@ -7,6 +7,7 @@ CStartScene::CStartScene()
 
 CStartScene::~CStartScene()
 {
+	ReleaseObjects();
 }
 
 void CStartScene::BuildObjects()
@@ -20,11 +21,9 @@ void CStartScene::BuildObjects()
 
 	pCamera->GenerateOrthographicProjectionMatrix(1.01f, 50.0f, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 
-	CAirplaneMesh* pAirplaneMesh = new CAirplaneMesh(6.0f, 6.0f, 1.0f);
-
-	m_pPlayer = new CAirplanePlayer();
+	m_pPlayer = new CPlayer();
 	m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f);
-	m_pPlayer->SetMesh(pAirplaneMesh);
+	m_pPlayer->SetMesh(NULL);
 	m_pPlayer->SetColor(RGB(0, 0, 255));
 	m_pPlayer->SetCamera(pCamera);
 	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 0.0f, -10.0f));
@@ -51,6 +50,15 @@ void CStartScene::ReleaseObjects()
 	for (auto pText : m_pTextObjects)
 		delete pText;
 	m_pTextObjects.clear();
+
+	for (auto pExplosive : m_pExplosions)
+		delete pExplosive;
+	m_pExplosions.clear();
+
+	if (m_pPlayer) {
+		delete m_pPlayer;
+		m_pPlayer = nullptr;
+	}
 
 #ifdef _WITH_DRAW_AXIS
 	if (m_pWorldAxis) delete m_pWorldAxis;

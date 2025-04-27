@@ -65,7 +65,15 @@ public:
 	void Move(XMFLOAT3& xmf3Shift);
 	void Move(float x, float y, float z);
 	void Rotate(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll = 0.0f);
+	void Rotate(XMFLOAT3& xmf3RotationAxis, float fAngle);
 	void Update(CPlayer* pPlayer, XMFLOAT3& xmf3LookAt, float fTimeElapsed = 0.016f);
+
+	XMFLOAT3 GetLook() {
+		return m_xmf3Look;
+	}
+	XMFLOAT3 GetUp() {
+		return m_xmf3Up;
+	}
 
 	bool IsInFrustum(BoundingOrientedBox& xmBoundingBox);
 };

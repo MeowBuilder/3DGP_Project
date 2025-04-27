@@ -87,6 +87,28 @@ void CPlayer::Rotate(float fPitch, float fYaw, float fRoll)
 	m_xmf3Up = Vector3::Normalize(Vector3::CrossProduct(m_xmf3Look, m_xmf3Right));
 }
 
+void CPlayer::Rotate(XMFLOAT3& xmf3RotationAxis, float fAngle)
+{
+	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3RotationAxis), XMConvertToRadians(fAngle));
+
+	m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, mtxRotate);
+	m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, mtxRotate);
+	m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, mtxRotate);
+
+	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
+	m_xmf3Up = Vector3::Normalize(m_xmf3Up);
+	m_xmf3Right = Vector3::Normalize(m_xmf3Right);
+
+	m_pCamera->Rotate(xmf3RotationAxis, fAngle);
+}
+
+void CPlayer::SetOrientation(const XMFLOAT3& right, const XMFLOAT3& up, const XMFLOAT3& look)
+{
+	m_xmf3Right = right;
+	m_xmf3Up = up;
+	m_xmf3Look = look;
+}
+
 void CPlayer::LookAt(XMFLOAT3& xmf3LookAt, XMFLOAT3& xmf3Up)
 {
 	XMFLOAT4X4 xmf4x4View = Matrix4x4::LookAtLH(m_xmf3Position, xmf3LookAt, xmf3Up);
@@ -213,4 +235,154 @@ void CAirplanePlayer::FireBullet(CGameObject* pLockedObject)
 			pBulletObject->SetColor(RGB(0, 0, 255));
 		}
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+CTankPlayer::CTankPlayer()
+{
+	// 기본 생성자
+}
+
+CTankPlayer::~CTankPlayer()
+{
+	// 메쉬 소멸은 메쉬가 공유라면 별도 delete 하지 않아야 함
+	m_pMeshLowerBody = nullptr;
+	m_pMeshUpperBody = nullptr;
+	m_pMeshTurret = nullptr;
+}
+
+void CTankPlayer::SetCameraOffset(XMFLOAT3& xmf3CameraOffset)
+{
+	m_xmf3BaseCameraOffset = xmf3CameraOffset;
+	m_xmf3CameraOffset = m_xmf3BaseCameraOffset;
+	m_pCamera->SetLookAt(Vector3::Add(m_xmf3Position, m_xmf3CameraOffset), m_xmf3Position, m_xmf3Up);
+	m_pCamera->GenerateViewMatrix();
+}
+
+void CTankPlayer::Rotate(float fYaw)
+{
+	XMMATRIX mtxRotate = XMMatrixRotationY(XMConvertToRadians(fYaw));
+
+	// 플레이어 자체는 회전
+	m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, mtxRotate);
+	m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, mtxRotate);
+
+	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
+	m_xmf3Right = Vector3::Normalize(m_xmf3Right);
+	m_xmf3Up = Vector3::Normalize(Vector3::CrossProduct(m_xmf3Look, m_xmf3Right));
+}
+
+void CTankPlayer::Animate(float fElapsedTime)
+{
+	UpdateTopParts(); // [★추가] 카메라와 동기화
+
+	CPlayer::Animate(fElapsedTime);
+
+	// 필요시 위몸통과 포신 추가 애니메이션 처리 가능
+
+	if (m_pCamera)
+	{
+		m_pCamera->SetLookAt(Vector3::Add(m_xmf3Position, m_xmf3CameraOffset), m_xmf3Position, XMFLOAT3(0.0f, 1.0f, 0.0f));
+		m_pCamera->GenerateViewMatrix();
+	}
+}
+
+void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
+{
+	// 아랫몸통 (Player 기본 방향으로 렌더링)
+	if (m_pMeshLowerBody)
+	{
+		CGraphicsPipeline::SetWorldTransform(&m_xmf4x4World);
+		m_pMeshLowerBody->Render(hDCFrameBuffer);
+	}
+
+	// 윗몸통 (TopLook 기준으로 렌더링)
+	if (m_pMeshUpperBody)
+	{
+		XMFLOAT4X4 xmf4TopWorld = m_xmf4x4World;
+		xmf4TopWorld._11 = m_xmf3TopRight.x; xmf4TopWorld._12 = m_xmf3TopRight.y; xmf4TopWorld._13 = m_xmf3TopRight.z;
+		xmf4TopWorld._21 = m_xmf3TopUp.x;    xmf4TopWorld._22 = m_xmf3TopUp.y;    xmf4TopWorld._23 = m_xmf3TopUp.z;
+		xmf4TopWorld._31 = m_xmf3TopLook.x;  xmf4TopWorld._32 = m_xmf3TopLook.y;  xmf4TopWorld._33 = m_xmf3TopLook.z;
+
+		xmf4TopWorld._42 += m_fBottomHeight; // 아랫몸체 위로
+
+		CGraphicsPipeline::SetWorldTransform(&xmf4TopWorld);
+		m_pMeshUpperBody->Render(hDCFrameBuffer);
+	}
+
+	// 포신 (TopLook 기준, Top 앞쪽으로 약간 이동)
+	if (m_pMeshTurret)
+	{
+		XMFLOAT4X4 xmf4CannonWorld = Matrix4x4::Identity();
+		xmf4CannonWorld._11 = m_xmf3TopRight.x; xmf4CannonWorld._12 = m_xmf3TopRight.y; xmf4CannonWorld._13 = m_xmf3TopRight.z;
+		xmf4CannonWorld._21 = m_xmf3TopUp.x;    xmf4CannonWorld._22 = m_xmf3TopUp.y;    xmf4CannonWorld._23 = m_xmf3TopUp.z;
+		xmf4CannonWorld._31 = m_xmf3TopLook.x;  xmf4CannonWorld._32 = m_xmf3TopLook.y;  xmf4CannonWorld._33 = m_xmf3TopLook.z;
+
+		// 포신 위치 = 윗몸통 위치 + 윗몸통 Look 방향으로 살짝 전진
+		XMFLOAT3 basePos = GetPosition();
+		basePos.y += m_fBottomHeight + m_fUpperHeight * 0.1f; // 윗몸통 높이 반영
+		basePos = Vector3::Add(basePos, Vector3::ScalarProduct(m_xmf3TopLook, m_fUpperWidth)); // 약간 전진
+
+		xmf4CannonWorld._41 = basePos.x;
+		xmf4CannonWorld._42 = basePos.y;
+		xmf4CannonWorld._43 = basePos.z;
+
+		CGraphicsPipeline::SetWorldTransform(&xmf4CannonWorld);
+		m_pMeshTurret->Render(hDCFrameBuffer);
+	}
+}
+
+
+void CTankPlayer::SetTankMesh(CMesh* pLowerBodyMesh, CMesh* pUpperBodyMesh, CMesh* pTurretMesh)
+{
+	if (!pLowerBodyMesh || !pUpperBodyMesh || !pTurretMesh) return;
+	m_pMeshLowerBody = pLowerBodyMesh;
+	m_pMeshUpperBody = pUpperBodyMesh;
+	m_pMeshTurret = pTurretMesh;
+}
+
+void CTankPlayer::RotateCameraOffset(float fAngleDegree)
+{
+	XMFLOAT3 offset = m_xmf3CameraOffset;
+
+	// 높이는 고정
+	float height = offset.y;
+
+	// xz 평면만 회전
+	XMFLOAT3 flatOffset(offset.x, 0.0f, offset.z);
+	XMMATRIX rotateMatrix = XMMatrixRotationY(XMConvertToRadians(fAngleDegree));
+	XMVECTOR vFlatOffset = XMLoadFloat3(&flatOffset);
+	vFlatOffset = XMVector3TransformCoord(vFlatOffset, rotateMatrix);
+
+	XMFLOAT3 rotatedFlatOffset;
+	XMStoreFloat3(&rotatedFlatOffset, vFlatOffset);
+
+	// 새로운 오프셋 저장
+	m_xmf3CameraOffset = XMFLOAT3(rotatedFlatOffset.x, height, rotatedFlatOffset.z);
+
+	// 카메라 다시 LookAt
+	m_pCamera->SetLookAt(Vector3::Add(m_xmf3Position, m_xmf3CameraOffset), m_xmf3Position, m_xmf3Up);
+	m_pCamera->GenerateViewMatrix();
+}
+
+
+void CTankPlayer::UpdateTopParts()
+{
+	if (!m_pCamera) return;
+
+	// 카메라 Look 방향을 가져오고
+	XMFLOAT3 camLook = m_pCamera->GetLook();
+
+	// Y값 제거 → 수평(XZ) 방향만 남김
+	camLook.y = 0.0f;
+
+	// 방향 정규화
+	camLook = Vector3::Normalize(camLook);
+
+	// 윗몸통의 기준 벡터 설정
+	m_xmf3TopLook = camLook;
+
+	m_xmf3TopUp = XMFLOAT3(0.0f, 1.0f, 0.0f); // 항상 위로
+	m_xmf3TopRight = Vector3::Normalize(Vector3::CrossProduct(m_xmf3TopUp, m_xmf3TopLook));
 }

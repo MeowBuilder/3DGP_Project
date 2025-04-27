@@ -68,6 +68,11 @@ XMFLOAT3 CGameObject::GetRight()
 	return(xmf3Right);
 }
 
+void CGameObject::SetWorldMatrix(const XMFLOAT4X4& xmf4x4World)
+{
+	m_xmf4x4World = xmf4x4World;
+}
+
 void CGameObject::SetRotationTransform(XMFLOAT4X4* pmxf4x4Transform)
 {
 	m_xmf4x4World._11 = pmxf4x4Transform->_11; m_xmf4x4World._12 = pmxf4x4Transform->_12; m_xmf4x4World._13 = pmxf4x4Transform->_13;
@@ -370,8 +375,8 @@ CTextCharacterObject::CTextCharacterObject(wchar_t ch)
 
 CTextCharacterObject::~CTextCharacterObject()
 {
-	ReleaseMesh();
 	for (auto cube : m_Cubes) {
+		ReleaseMesh();
 		delete cube;
 	}
 	m_Cubes.clear();
@@ -602,4 +607,16 @@ int CTextObject3D::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATR
 	}
 
 	return nIntersected;  // 교차하지 않으면 0 반환
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CRailObject::CRailObject()
+{
+	SetMesh(new CRailMesh());
+	SetColor(RGB(128, 128, 128));
+}
+
+CRailObject::~CRailObject()
+{
 }

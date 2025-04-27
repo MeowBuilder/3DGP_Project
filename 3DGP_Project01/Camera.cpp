@@ -125,6 +125,22 @@ void CCamera::Rotate(float fPitch, float fYaw, float fRoll)
 	}
 }
 
+void CCamera::Rotate(XMFLOAT3& xmf3RotationAxis, float fAngle)
+{
+	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3RotationAxis), XMConvertToRadians(fAngle));
+
+	m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, mtxRotate);
+	m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, mtxRotate);
+	m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, mtxRotate);
+
+	m_xmf3Right = Vector3::Normalize(m_xmf3Right);
+	m_xmf3Up = Vector3::Normalize(m_xmf3Up);
+	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
+
+	// 회전했으니 view 행렬도 다시 만들어야 함
+	GenerateViewMatrix();
+}
+
 void CCamera::Update(CPlayer* pPlayer, XMFLOAT3& xmf3LookAt, float fTimeElapsed)
 {
 	XMFLOAT4X4 mtxRotate = Matrix4x4::Identity();

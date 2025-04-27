@@ -3,6 +3,8 @@
 #include "Scene.h"
 #include "StartScene.h"
 #include "MenuScene.h"
+#include "Level1.h"
+#include "Level2.h"
 
 class CSceneManager
 {

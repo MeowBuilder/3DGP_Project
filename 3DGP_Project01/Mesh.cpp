@@ -473,3 +473,39 @@ void CAxisMesh::Render(HDC hDCFrameBuffer)
 	::SelectObject(hDCFrameBuffer, hOldPen);
 	::DeleteObject(hPen);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CRailMesh::CRailMesh(float fLength, float fWidth, float fHeight)
+{
+	m_nPolygons = 6;
+	m_ppPolygons = new CPolygon * [m_nPolygons];
+
+	// 바닥 판자 (기본 박스 모양)
+	CVertex vertices[8] = {
+		CVertex(-fWidth, -fHeight, -fLength), CVertex(fWidth, -fHeight, -fLength),
+		CVertex(fWidth, -fHeight, fLength),  CVertex(-fWidth, -fHeight, fLength),
+		CVertex(-fWidth, fHeight, -fLength), CVertex(fWidth, fHeight, -fLength),
+		CVertex(fWidth, fHeight, fLength),  CVertex(-fWidth, fHeight, fLength)
+	};
+
+	// 각 면을 구성 (6면)
+	int faces[6][4] = {
+		{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4},
+		{1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}
+	};
+
+	for (int i = 0; i < 6; ++i) {
+		m_ppPolygons[i] = new CPolygon(4);
+		for (int j = 0; j < 4; ++j)
+			m_ppPolygons[i]->SetVertex(j, vertices[faces[i][j]]);
+	}
+
+	// AABB 설정 (선택사항)
+	m_xmOOBB = BoundingOrientedBox(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(fWidth, fHeight, fLength), XMFLOAT4(0, 0, 0, 1));
+}
+
+CRailMesh::~CRailMesh()
+{
+}

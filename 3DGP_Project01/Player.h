@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GraphicsPipeline.h"
 #include "GameObject.h"
 #include "Camera.h"
 
@@ -37,8 +38,12 @@ public:
 	void Move(float x, float y, float z);
 
 	void Rotate(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll = 0.0f);
+	void Rotate(XMFLOAT3& xmf3RotationAxis, float fAngle);
+
+	void SetOrientation(const XMFLOAT3& right, const XMFLOAT3& up, const XMFLOAT3& look);
 
 	void SetCameraOffset(XMFLOAT3& xmf3CameraOffset);
+	XMFLOAT3 GetCameraOffset() { return m_xmf3CameraOffset; };
 
 	void Update(float fTimeElapsed = 0.016f);
 
@@ -68,3 +73,40 @@ public:
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
 };
 
+class CTankPlayer : public CPlayer
+{
+public:
+    CTankPlayer();
+    virtual ~CTankPlayer();
+	void SetCameraOffset(XMFLOAT3& xmf3CameraOffset);
+
+    virtual void Animate(float fElapsedTime);
+    virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+
+	void Rotate(float fYaw);
+
+	void SetTankMesh(CMesh*, CMesh*, CMesh*);
+	void RotateCameraOffset(float fAngleDegree);
+
+	void UpdateTopParts();
+
+    // 추가 멤버 변수
+    CMesh* m_pMeshLowerBody = nullptr; // 밑몸통
+    CMesh* m_pMeshUpperBody = nullptr; // 위몸통 (포탑)
+    CMesh* m_pMeshTurret = nullptr;    // 포신 (캐논)
+
+    float m_fUpperRotation = 0.0f; // 위몸통 Y축 회전각 (degrees)
+    float m_fTurretPitch = 0.0f;   // 포신 X축 상하 회전각 (degrees)
+
+	float m_fBottomHeight = 0.0f;
+	float m_fUpperHeight = 0.0f;
+	float m_fUpperWidth = 0.0f;
+
+	float m_fTopYaw = 0.0f; // 윗몸통+포신용 Yaw 누적 회전 값
+
+	XMFLOAT3 m_xmf3TopRight = { 1.0f, 0.0f, 0.0f };
+	XMFLOAT3 m_xmf3TopUp = { 0.0f, 1.0f, 0.0f };
+	XMFLOAT3 m_xmf3TopLook = { 0.0f, 0.0f, 1.0f };
+
+	XMFLOAT3 m_xmf3BaseCameraOffset; // ★ 고정된 기본 오프셋 추가
+};

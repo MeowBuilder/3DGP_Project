@@ -71,6 +71,13 @@ public:
 	virtual ~CWallMesh() {}
 };
 
+class CRailMesh : public CMesh
+{
+public:
+	CRailMesh(float fLength = 10.0f, float fWidth = 1.0f, float fHeight = 0.2f);
+	virtual ~CRailMesh();
+};
+
 class CAirplaneMesh : public CMesh
 {
 public:
@@ -86,3 +93,4 @@ public:
 
 	virtual void Render(HDC hDCFrameBuffer);
 };
+

@@ -5,6 +5,10 @@
 #include "stdafx.h"
 #include "GameFramework.h"
 
+CGameFramework::~CGameFramework() {
+	OnDestroy();
+}
+
 void CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 {
 	::srand(timeGetTime());

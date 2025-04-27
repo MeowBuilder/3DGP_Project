@@ -29,8 +29,16 @@ void CSceneManager::ChangeScene(int nSceneID)
     case 1:
         m_pCurrentScene = new CMenuScene();
         break;
+    case 2:
+        m_pCurrentScene = new CLevel1();
+        break;
+    case 3:
+        m_pCurrentScene = new CLevel2();
+        break;
+    case 4:
+        m_pCurrentScene = new CScene();
+        break;
     default:
-        m_pCurrentScene = new CStartScene();
         break;
     }
 

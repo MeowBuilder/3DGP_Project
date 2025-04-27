@@ -33,9 +33,11 @@ public:
 
 	void SetActive(bool bActive) { m_bActive = bActive; }
 	void SetMesh(CMesh* pMesh) { m_pMesh = pMesh; if (pMesh) pMesh->AddRef(); }
+	CMesh* GetMesh() { if (m_pMesh) return m_pMesh; else return nullptr; };
 
 	void SetColor(DWORD dwColor) { m_dwColor = dwColor; }
 
+	void SetWorldMatrix(const XMFLOAT4X4& xmf4x4World);
 	void SetRotationTransform(XMFLOAT4X4* pmxf4x4Transform);
 
 	void SetPosition(float x, float y, float z);
@@ -204,4 +206,11 @@ private:
 	float m_fRotationAngle = 0.0f;          // 누적 회전 각도
 	std::vector<CTextCharacterObject*> m_Characters;
 	int m_nTargetSceneID = -1; // 기본: 전환 없음
+};
+
+class CRailObject : public CGameObject
+{
+public:
+	CRailObject();
+	virtual ~CRailObject();
 };

@@ -8,7 +8,7 @@ class CGameFramework
 {
 public:
 	CGameFramework() {}
-	~CGameFramework() {}
+	~CGameFramework();
 
 private:
 	HINSTANCE					m_hInstance = NULL;
