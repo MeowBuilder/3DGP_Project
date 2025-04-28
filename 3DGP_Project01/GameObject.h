@@ -55,7 +55,7 @@ public:
 	void MoveForward(float fDistance = 1.0f);
 	void Move(XMFLOAT3& vDirection, float fSpeed);
 
-	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
+	virtual void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	void Rotate(XMFLOAT3& xmf3Axis, float fAngle);
 
 	XMFLOAT3 GetPosition();

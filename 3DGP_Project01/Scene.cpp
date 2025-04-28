@@ -61,7 +61,7 @@ void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPar
 		switch (wParam)
 		{
 		case VK_ESCAPE:
-			m_nNextSceneID = 0;
+			m_nNextSceneID = 1;
 			m_bSceneFinished = true;
 			break;
 		default:

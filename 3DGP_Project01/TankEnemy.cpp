@@ -3,29 +3,12 @@
 
 CTankEnemy::CTankEnemy()
 {
-    // 메쉬 생성
-    m_pLowerBody = new CGameObject();
-    m_pLowerBody->SetMesh(new CCubeMesh(8.0f, 2.0f, 8.0f));
-    m_pLowerBody->SetColor(RGB(100, 100, 100));
-
-    m_pUpperBody = new CGameObject();
-    m_pUpperBody->SetMesh(new CCubeMesh(6.0f, 2.0f, 6.0f));
-    m_pUpperBody->SetColor(RGB(150, 150, 150));
-    m_pUpperBody->SetPosition(0.0f, 2.0f, 0.0f);
-
-    m_pCannon = new CGameObject();
-    m_pCannon->SetMesh(new CCubeMesh(1.0f, 1.0f, 6.0f));
-    m_pCannon->SetColor(RGB(200, 0, 0));
-    m_pCannon->SetPosition(0.0f, 1.0f, 5.0f);
-
-    m_fRandomMoveTime = 1.0f + ((float)(rand() % 200) / 100.0f);
+    m_fRandomMoveTime = 1.0f + ((float)(rand() % 200) / 100.0f); // 1~3초 사이 랜덤
 }
 
 CTankEnemy::~CTankEnemy()
 {
-    delete m_pLowerBody;
-    delete m_pUpperBody;
-    delete m_pCannon;
+    // 메쉬 해제는 부모가 관리함
 }
 
 void CTankEnemy::Animate(float fElapsedTime)
@@ -34,53 +17,40 @@ void CTankEnemy::Animate(float fElapsedTime)
 
     if (m_fElapsedTime >= m_fRandomMoveTime)
     {
-        // 랜덤 회전
-        float randomAngle = ((rand() % 360) - 180.0f);
-        XMMATRIX mtxRotate = XMMatrixRotationY(XMConvertToRadians(randomAngle));
-        m_xmf3Direction = Vector3::TransformNormal(m_xmf3Direction, mtxRotate);
-        m_xmf3Direction = Vector3::Normalize(m_xmf3Direction);
+        // 랜덤하게 방향 변경
+        int nMoveType = rand() % 2;
+        m_nMoveDirection = (nMoveType == 0) ? 1 : -1;
+
+        m_fRotationAngle = (rand() % 61) - 30.0f; // -30도 ~ +30도 회전
 
         m_fElapsedTime = 0.0f;
         m_fRandomMoveTime = 1.0f + ((float)(rand() % 200) / 100.0f);
     }
 
-    // 이동
-    XMFLOAT3 pos = GetPosition();
-    XMFLOAT3 move = Vector3::ScalarProduct(m_xmf3Direction, m_fMoveSpeed * fElapsedTime, false);
-    XMFLOAT3 newPos = Vector3::Add(pos, move);
-    SetPosition(newPos);
-
-    // 하위 오브젝트 Animate
-    m_pLowerBody->Animate(fElapsedTime);
-    m_pUpperBody->Animate(fElapsedTime);
-    m_pCannon->Animate(fElapsedTime);
-}
-
-void CTankEnemy::Render(HDC hDCFrameBuffer, CCamera* pCamera)
-{
-    XMFLOAT3 basePos = GetPosition();
-
+    // 회전
+    if (fabs(m_fRotationAngle) > 0.0f)
     {
-        XMFLOAT4X4 world = Matrix4x4::Identity();
-        world._41 = basePos.x;
-        world._42 = basePos.y;
-        world._43 = basePos.z;
-        m_pLowerBody->Render(hDCFrameBuffer, &world, m_pLowerBody->GetMesh());
+        float rotateSpeed = 90.0f; // 초당 90도
+        float rotateAmount = rotateSpeed * fElapsedTime;
+
+        if (m_fRotationAngle > 0.0f)
+        {
+            Rotate(rotateAmount); // CTankPlayer::Rotate(float fYaw)
+            m_fRotationAngle -= rotateAmount;
+            if (m_fRotationAngle < 0.0f) m_fRotationAngle = 0.0f;
+        }
+        else
+        {
+            Rotate(-rotateAmount);
+            m_fRotationAngle += rotateAmount;
+            if (m_fRotationAngle > 0.0f) m_fRotationAngle = 0.0f;
+        }
     }
 
-    {
-        XMFLOAT4X4 world = Matrix4x4::Identity();
-        world._41 = basePos.x + m_pUpperBody->GetPosition().x;
-        world._42 = basePos.y + m_pUpperBody->GetPosition().y;
-        world._43 = basePos.z + m_pUpperBody->GetPosition().z;
-        m_pUpperBody->Render(hDCFrameBuffer, &world, m_pUpperBody->GetMesh());
-    }
+    // 이동 (전진 또는 후진)
+    XMFLOAT3 moveDir = GetLook();
+    XMFLOAT3 moveShift = Vector3::ScalarProduct(moveDir, m_nMoveDirection * 5.0f * fElapsedTime, false);
+    Move(moveShift, false);
 
-    {
-        XMFLOAT4X4 world = Matrix4x4::Identity();
-        world._41 = basePos.x + m_pCannon->GetPosition().x;
-        world._42 = basePos.y + m_pCannon->GetPosition().y;
-        world._43 = basePos.z + m_pCannon->GetPosition().z;
-        m_pCannon->Render(hDCFrameBuffer, &world, m_pCannon->GetMesh());
-    }
+    CTankPlayer::Animate(fElapsedTime);
 }

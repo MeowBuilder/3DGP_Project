@@ -24,9 +24,13 @@ void CLevel2::BuildObjects()
     m_pPlayer->SetCamera(pCamera);
     m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 20.0f, -75.0f));
 
-    m_pPlayer->m_fBottomHeight = 2.0f;
-    m_pPlayer->m_fUpperHeight = 2.0f;
-    m_pPlayer->m_fUpperWidth = 6.0f;
+    float fBottomHeight = 2.0f;
+    float fUpperHeight = 2.0f;
+    float fUpperWidth = 6.0f;
+
+    m_pPlayer->m_fBottomHeight = fBottomHeight;
+    m_pPlayer->m_fUpperHeight = fUpperHeight;
+    m_pPlayer->m_fUpperWidth = fUpperWidth;
 
     CCubeMesh* pLowerBodyMesh = new CCubeMesh(8.0f, m_pPlayer->m_fBottomHeight, 12.0f);   // ¹Ø¸öÅë: ±æ°í ³·°Ô
     CCubeMesh* pUpperBodyMesh = new CCubeMesh(6.0f, m_pPlayer->m_fUpperHeight, 6.0f);    // À§¸öÅë(Æ÷Å¾): Á¤»ç°¢Çü
@@ -41,7 +45,11 @@ void CLevel2::BuildObjects()
     for (int i = 0; i < 10; ++i)
     {
         CTankEnemy* pEnemy = new CTankEnemy();
+        pEnemy->m_fBottomHeight = fBottomHeight;
+        pEnemy->m_fUpperHeight = fUpperHeight;
+        pEnemy->m_fUpperWidth = fUpperWidth;
         pEnemy->SetPosition(i*100.0f,0.0f,0.0f);
+        pEnemy->SetTankMesh(pLowerBodyMesh, pUpperBodyMesh, pTurretMesh);
         m_pEnemies.push_back(pEnemy);
     }
 
