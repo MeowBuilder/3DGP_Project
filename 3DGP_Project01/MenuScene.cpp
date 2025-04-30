@@ -31,31 +31,31 @@ void CMenuScene::BuildObjects()
 	float textZpos = 100.0f;
 
 	// TUTORIAL (가장 위 중앙)
-	CTextObject3D* pText1 = new CTextObject3D(L"TUTORIAL");
+	CTextObject* pText1 = new CTextObject(L"TUTORIAL");
 	pText1->SetPosition(XMFLOAT3(-30.0f, 30.0f, textZpos));
 	pText1->SetTargetSceneID(4);
 	m_pTextObjects.push_back(pText1);
 
 	// LEVEL-1 (왼쪽 아래)
-	CTextObject3D* pText2 = new CTextObject3D(L"LEVEL-1");
+	CTextObject* pText2 = new CTextObject(L"LEVEL-1");
 	pText2->SetPosition(XMFLOAT3(-70.0f, 5.0f, textZpos));
 	pText2->SetTargetSceneID(2);
 	m_pTextObjects.push_back(pText2);
 
 	// LEVEL-2 (오른쪽 아래)
-	CTextObject3D* pText3 = new CTextObject3D(L"LEVEL-2");
+	CTextObject* pText3 = new CTextObject(L"LEVEL-2");
 	pText3->SetPosition(XMFLOAT3(20.0f, 5.0f, textZpos));
 	pText3->SetTargetSceneID(3);
 	m_pTextObjects.push_back(pText3);
 
 	// START (왼쪽 맨 아래)
-	CTextObject3D* pText4 = new CTextObject3D(L"START");
+	CTextObject* pText4 = new CTextObject(L"START");
 	pText4->SetPosition(XMFLOAT3(-60.0f, -20.0f, textZpos));
 	pText4->SetTargetSceneID(2);
 	m_pTextObjects.push_back(pText4);
 
 	// END (오른쪽 맨 아래)
-	CTextObject3D* pText5 = new CTextObject3D(L"END");
+	CTextObject* pText5 = new CTextObject(L"END");
 	pText5->SetPosition(XMFLOAT3(40.0f, -20.0f, textZpos));
 	pText5->SetTargetSceneID(-2);
 	m_pTextObjects.push_back(pText5);
@@ -102,7 +102,7 @@ void CMenuScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
 		m_xmf3PickPosition.y = (float)yClient;
 
 		// 마우스가 올려진 텍스트 객체 찾기
-		m_pHitText = dynamic_cast<CTextObject3D*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
+		m_pHitText = dynamic_cast<CTextObject*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
 
 		// 모든 텍스트 오브젝트 색상 초기화 (빨간색)
 		for (auto& pText : m_pTextObjects)
@@ -116,7 +116,7 @@ void CMenuScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
 	}
 	break;
 	case WM_LBUTTONDOWN:
-		m_pHitText = dynamic_cast<CTextObject3D*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
+		m_pHitText = dynamic_cast<CTextObject*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
 		if (m_pHitText)
 		{
 			CExplosiveObject* pExplosion = new CExplosiveObject();
@@ -200,7 +200,7 @@ void CMenuScene::Animate(float fElapsedTime)
 		(*it)->Animate(fElapsedTime);
 
 		if (!(*it)->m_bBlowingUp) {
-			CTextObject3D* parent = dynamic_cast<CTextObject3D*>((*it)->m_pParentObject);
+			CTextObject* parent = dynamic_cast<CTextObject*>((*it)->m_pParentObject);
 			m_nNextSceneID = parent->GetTargetSceneID();
 
 			if (m_nNextSceneID == -2) {

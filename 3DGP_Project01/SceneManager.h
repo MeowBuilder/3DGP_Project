@@ -19,8 +19,6 @@ public:
 
     void ChangeScene(int nSceneID);
 
-    void BuildCurrentScene();
-    void UpdateCamera(float fElapsedTime);
     void Animate(float fElapsedTime);
     void Render(HDC hDCFrameBuffer);
     void ReleaseCurrentScene();

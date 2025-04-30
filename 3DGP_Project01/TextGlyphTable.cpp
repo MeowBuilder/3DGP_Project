@@ -140,7 +140,6 @@ static const wchar_t* GLYPH_순[GLYPH_HEIGHT] = {
 	L"#######"
 };
 
-// 알파벳
 static const wchar_t* GLYPH_A[GLYPH_HEIGHT] = {
 	L" ##### ",
 	L"#     #",
@@ -261,7 +260,6 @@ static const wchar_t* GLYPH_TWODASH[GLYPH_HEIGHT] = {
 	L"       "
 };
 
-// 숫자 2
 static const wchar_t* GLYPH_2[GLYPH_HEIGHT] = {
 	L" ##### ",
 	L"#     #",
@@ -270,6 +268,36 @@ static const wchar_t* GLYPH_2[GLYPH_HEIGHT] = {
 	L" #     ",
 	L"#      ",
 	L"#######"
+};
+
+static const wchar_t* GLYPH_Y[GLYPH_HEIGHT] = {
+	L"#     #",
+	L" #   # ",
+	L"  # #  ",
+	L"   #   ",
+	L"   #   ",
+	L"   #   ",
+	L"   #   "
+};
+
+static const wchar_t* GLYPH_W[GLYPH_HEIGHT] = {
+	L"#     #",
+	L"#     #",
+	L"#  #  #",
+	L"#  #  #",
+	L"#  #  #",
+	L"#  #  #",
+	L" ## ## "
+};
+
+static const wchar_t* GLYPH_Exclamation[GLYPH_HEIGHT] = {
+	L"   #   ",
+	L"   #   ",
+	L"   #   ",
+	L"   #   ",
+	L"       ",
+	L"   #   ",
+	L"   #   "
 };
 
 const wchar_t** GetGlyph(wchar_t ch)
@@ -304,6 +332,9 @@ const wchar_t** GetGlyph(wchar_t ch)
 	case L'U': return GLYPH_U;
 	case L'V': return GLYPH_V;
 	case L'-': return GLYPH_TWODASH;
+	case L'Y': return GLYPH_Y;
+	case L'W': return GLYPH_W;
+	case L'!': return GLYPH_Exclamation;
 
 	default:    return GLYPH_EMPTY;
 	}

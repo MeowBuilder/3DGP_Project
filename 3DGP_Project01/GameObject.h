@@ -141,15 +141,6 @@ public:
 	void Reset();
 };
 
-class CAxisObject : public CGameObject
-{
-public:
-	CAxisObject() {}
-	virtual ~CAxisObject() {}
-
-	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
-};
-
 class CTextCharacterObject : public CGameObject {
 public:
 	std::vector<CGameObject*> m_Cubes;
@@ -175,11 +166,11 @@ private:
 	XMFLOAT4X4 m_xmf4x4Rotation = Matrix4x4::Identity();
 };
 
-class CTextObject3D : public CGameObject {
+class CTextObject : public CGameObject {
 public:
 
-	CTextObject3D(const std::wstring& text);
-	virtual ~CTextObject3D();
+	CTextObject(const std::wstring& text);
+	virtual ~CTextObject();
 
 	void SetTargetSceneID(int nSceneID) { m_nTargetSceneID = nSceneID; }
 	int GetTargetSceneID() const { return m_nTargetSceneID; }

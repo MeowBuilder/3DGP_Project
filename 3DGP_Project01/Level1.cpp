@@ -81,17 +81,17 @@ void CLevel1::BuildRailSegments()
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 0.0f, 100.0f));
     m_ControlPoints.push_back(XMFLOAT3(-100.0f, 0.0f, 0.0f));
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 0.0f, -100.0f));
-    m_ControlPoints.push_back(XMFLOAT3(0.0f, 100.0f, -100.0f)); // 상승
+    m_ControlPoints.push_back(XMFLOAT3(0.0f, 100.0f, -100.0f));
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 200.0f, 0.0f));
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 100.0f, 100.0f));
-    m_ControlPoints.push_back(XMFLOAT3(100.0f, 0.0f, 0.0f)); // ?? 시작점으로 돌아감
+    m_ControlPoints.push_back(XMFLOAT3(100.0f, 0.0f, 0.0f));
 
     // 보간용 가상 점 추가 (양 끝 연결 자연스럽게)
     std::vector<XMFLOAT3> tempPoints = m_ControlPoints;
-    tempPoints.insert(tempPoints.begin(), m_ControlPoints[m_ControlPoints.size() - 2]); // 맨 앞에 마지막 전 점 추가
-    tempPoints.push_back(m_ControlPoints[1]);  // 맨 뒤에 두번째 점 추가
+    tempPoints.insert(tempPoints.begin(), m_ControlPoints[m_ControlPoints.size() - 2]);
+    tempPoints.push_back(m_ControlPoints[1]);
 
-    const int interpolateSteps = 10; // 세분화
+    const int interpolateSteps = 10;
 
     for (size_t i = 0; i < tempPoints.size() - 3; ++i)
     {
@@ -200,7 +200,6 @@ void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
     XMFLOAT3 playerUp = m_pPlayer->GetUp();
     XMFLOAT3 playerRight = m_pPlayer->GetRight();
 
-    // 원하는 오프셋 (뒤로 -30, 위로 +30)
     XMFLOAT3 offset = Vector3::Add(
         Vector3::ScalarProduct(playerUp, 30.0f, false),
         Vector3::ScalarProduct(playerLook, -30.0f, false)

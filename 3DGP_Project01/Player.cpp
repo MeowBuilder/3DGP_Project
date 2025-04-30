@@ -198,14 +198,6 @@ void CAirplanePlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 
 void CAirplanePlayer::FireBullet(CGameObject* pLockedObject)
 {
-	/*
-		if (pLockedObject)
-		{
-			LookAt(pLockedObject->GetPosition(), XMFLOAT3(0.0f, 1.0f, 0.0f));
-			OnUpdateTransform();
-		}
-	*/
-
 	CBulletObject* pBulletObject = NULL;
 	for (int i = 0; i < BULLETS; i++)
 	{

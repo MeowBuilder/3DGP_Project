@@ -324,25 +324,7 @@ void CBulletObject::Animate(float fElapsedTime)
 		xmvMovingDirection = XMVector3Normalize(XMVectorLerp(xmvMovingDirection, xmvToLockedObject, 0.25f));
 		XMStoreFloat3(&m_xmf3MovingDirection, xmvMovingDirection);
 	}
-#ifdef _WITH_VECTOR_OPERATION
-	XMFLOAT3 xmf3Position = GetPosition();
 
-	m_fRotationAngle += m_fRotationSpeed * fElapsedTime;
-	if (m_fRotationAngle > 360.0f) m_fRotationAngle = m_fRotationAngle - 360.0f;
-
-	XMFLOAT4X4 mtxRotate1 = Matrix4x4::RotationYawPitchRoll(0.0f, m_fRotationAngle, 0.0f);
-
-	XMFLOAT3 xmf3RotationAxis = Vector3::CrossProduct(m_xmf3RotationAxis, m_xmf3MovingDirection, true);
-	float fDotProduct = Vector3::DotProduct(m_xmf3RotationAxis, m_xmf3MovingDirection);
-	float fRotationAngle = ::IsEqual(fDotProduct, 1.0f) ? 0.0f : (float)XMConvertToDegrees(acos(fDotProduct));
-	XMFLOAT4X4 mtxRotate2 = Matrix4x4::RotationAxis(xmf3RotationAxis, fRotationAngle);
-
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate1, mtxRotate2);
-
-	XMFLOAT3 xmf3Movement = Vector3::ScalarProduct(m_xmf3MovingDirection, fDistance, false);
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Movement);
-	SetPosition(xmf3Position);
-#else
 	XMFLOAT4X4 mtxRotate = Matrix4x4::RotationYawPitchRoll(0.0f, m_fRotationSpeed * fElapsedTime, 0.0f);
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 	XMFLOAT3 xmf3Movement = Vector3::ScalarProduct(m_xmf3MovingDirection, fDistance, false);
@@ -350,20 +332,10 @@ void CBulletObject::Animate(float fElapsedTime)
 	xmf3Position = Vector3::Add(xmf3Position, xmf3Movement);
 	SetPosition(xmf3Position);
 	m_fMovingDistance += fDistance;
-#endif
 
 	UpdateBoundingBox();
 
 	if ((m_fMovingDistance > m_fBulletEffectiveRange) || (m_fElapsedTimeAfterFire > m_fLockingTime)) Reset();
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CAxisObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
-{
-	CGraphicsPipeline::SetWorldTransform(&m_xmf4x4World);
-
-	m_pMesh->Render(hDCFrameBuffer);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -496,12 +468,12 @@ int CTextCharacterObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition,
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CTextObject3D::CTextObject3D(const std::wstring& text)
+CTextObject::CTextObject(const std::wstring& text)
 {
 	SetText(text);
 }
 
-CTextObject3D::~CTextObject3D()
+CTextObject::~CTextObject()
 {
 	for (auto& ch : m_Characters) {
 		delete ch;
@@ -509,7 +481,7 @@ CTextObject3D::~CTextObject3D()
 	m_Characters.clear();
 }
 
-void CTextObject3D::SetText(const std::wstring& text)
+void CTextObject::SetText(const std::wstring& text)
 {
 	float xOffset = 0.0f;
 	const float spacing = 8.0f; // 글자 간 간격 (7x7 기준 + 여유)
@@ -523,14 +495,14 @@ void CTextObject3D::SetText(const std::wstring& text)
 	}
 }
 
-void CTextObject3D::SetColor(COLORREF color)
+void CTextObject::SetColor(COLORREF color)
 {
 	m_dwColor = color;
 	for (auto& ch : m_Characters)
 		ch->SetColor(color);
 }
 
-void CTextObject3D::Animate(float fElapsedTime)
+void CTextObject::Animate(float fElapsedTime)
 {
 	if (!m_bActive) return;
 
@@ -539,7 +511,7 @@ void CTextObject3D::Animate(float fElapsedTime)
 		ch->Animate(fElapsedTime);
 }
 
-void CTextObject3D::Render(HDC hDCFrameBuffer, CCamera* pCamera)
+void CTextObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 {
 	if (!m_bActive) return;
 
@@ -576,7 +548,7 @@ void CTextObject3D::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 	}
 }
 
-int CTextObject3D::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance)
+int CTextObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance)
 {
 	if (!m_bActive) return 0;
 

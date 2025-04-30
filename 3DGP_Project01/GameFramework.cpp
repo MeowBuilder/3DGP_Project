@@ -165,7 +165,6 @@ void CGameFramework::AnimateObjects()
 {
  float fTimeElapsed = m_GameTimer.GetTimeElapsed();
     if (m_pSceneManager) {
-		m_pSceneManager->UpdateCamera(fTimeElapsed);
 		m_pSceneManager->Animate(fTimeElapsed);
     }
 }

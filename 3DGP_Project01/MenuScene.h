@@ -32,9 +32,9 @@ private:
 
 	//CCamera* m_pSceneCamera = nullptr;
 
-	CTextObject3D* m_pHitText = NULL;
+	CTextObject* m_pHitText = NULL;
 
-	std::vector<CTextObject3D*> m_pTextObjects;
+	std::vector<CTextObject*> m_pTextObjects;
 
 	std::vector<CExplosiveObject*> m_pExplosions;
 

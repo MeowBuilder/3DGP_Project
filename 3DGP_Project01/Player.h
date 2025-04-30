@@ -29,7 +29,6 @@ public:
 
 public:
 	void SetPosition(float x, float y, float z);
-	void SetRotation(float x, float y, float z);
 
 	void LookAt(XMFLOAT3& xmf3LookAt, XMFLOAT3& xmf3Up);
 
@@ -87,8 +86,11 @@ public:
     virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
 	void FireBullet(CGameObject*);
 
-	float m_fBulletEffectiveRange = 1500.0f;
-	CBulletObject* m_ppBullets[BULLETS];
+	void setSize(float BottomHeight, float UpperHeight, float UpperWidth) {
+		m_fBottomHeight = BottomHeight;
+		m_fUpperHeight = UpperHeight;
+		m_fUpperWidth = UpperWidth;
+	}
 
 	void Rotate(float fYaw);
 
@@ -98,7 +100,10 @@ public:
 	void UpdateTopParts();
 	void UpdateBoundingBox();
 
-    // Ãß°¡ ¸â¹ö º¯¼ö
+	float m_fBulletEffectiveRange = 1500.0f;
+	CBulletObject* m_ppBullets[BULLETS];
+
+protected:
     CMesh* m_pMeshLowerBody = nullptr; // ¹Ø¸öÅë
     CMesh* m_pMeshUpperBody = nullptr; // À§¸öÅë (Æ÷Å¾)
     CMesh* m_pMeshTurret = nullptr;    // Æ÷½Å (Ä³³í)

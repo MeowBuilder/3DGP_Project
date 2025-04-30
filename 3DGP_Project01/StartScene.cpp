@@ -29,20 +29,14 @@ void CStartScene::BuildObjects()
 	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 0.0f, -10.0f));
 
 	// 여러 텍스트 오브젝트 생성
-	CTextObject3D* pText1 = new CTextObject3D(L"3D 게임 프로그래밍 1");
+	CTextObject* pText1 = new CTextObject(L"3D 게임 프로그래밍 1");
 	pText1->SetPosition(XMFLOAT3(-50.0f, 25.0f, 75.0f));
 	m_pTextObjects.push_back(pText1);
 
-	CTextObject3D* pText2 = new CTextObject3D(L"김태순");
+	CTextObject* pText2 = new CTextObject(L"김태순");
 	pText2->SetPosition(XMFLOAT3(-10.0f, -15.0f, 50.0f));
 	pText2->SetTargetSceneID(1);
 	m_pTextObjects.push_back(pText2);
-
-#ifdef _WITH_DRAW_AXIS
-	m_pWorldAxis = new CGameObject();
-	CAxisMesh* pAxisMesh = new CAxisMesh(0.5f, 0.5f, 0.5f);
-	m_pWorldAxis->SetMesh(pAxisMesh);
-#endif
 }
 
 void CStartScene::ReleaseObjects()
@@ -59,10 +53,6 @@ void CStartScene::ReleaseObjects()
 		delete m_pPlayer;
 		m_pPlayer = nullptr;
 	}
-
-#ifdef _WITH_DRAW_AXIS
-	if (m_pWorldAxis) delete m_pWorldAxis;
-#endif
 }
 
 void CStartScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -80,7 +70,7 @@ void CStartScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
         m_xmf3PickPosition.y = (float)yClient;
 
         // 마우스가 올려진 텍스트 객체 찾기
-		m_pHitText = dynamic_cast<CTextObject3D*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
+		m_pHitText = dynamic_cast<CTextObject*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
 
         // 모든 텍스트 오브젝트 색상 초기화 (빨간색)
         for (auto& pText : m_pTextObjects)
@@ -94,7 +84,7 @@ void CStartScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 	}
 	break;
 	case WM_LBUTTONDOWN:
-		m_pHitText = dynamic_cast<CTextObject3D*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
+		m_pHitText = dynamic_cast<CTextObject*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
 		if (m_pHitText)
 		{
 			CExplosiveObject* pExplosion = new CExplosiveObject();
@@ -177,7 +167,7 @@ void CStartScene::Animate(float fElapsedTime)
 		(*it)->Animate(fElapsedTime);
 
 		if (!(*it)->m_bBlowingUp) {
-			CTextObject3D* parent = dynamic_cast<CTextObject3D*>((*it)->m_pParentObject);
+			CTextObject* parent = dynamic_cast<CTextObject*>((*it)->m_pParentObject);
 			m_nNextSceneID = parent->GetTargetSceneID();
 			delete (*it);
 			it = m_pExplosions.erase(it);
@@ -210,11 +200,6 @@ void CStartScene::Render(HDC hDCFrameBuffer)
 	// 원래 브러시 복원
 	DeleteObject(hBrush);
 
-#ifdef _WITH_DRAW_AXIS
-	CGraphicsPipeline::SetViewOrthographicProjectTransform(&pCamera->m_xmf4x4ViewOrthographicProject);
-	m_pWorldAxis->SetRotationTransform(&m_pPlayer->m_xmf4x4World);
-	m_pWorldAxis->Render(hDCFrameBuffer, pCamera);
-#endif
 }
 
 void CStartScene::UpdateCamera(float fElapsedTime)

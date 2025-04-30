@@ -12,6 +12,8 @@ CLevel2::~CLevel2()
 
 void CLevel2::BuildObjects()
 {
+    CExplosiveObject::PrepareExplosion();
+    
     CCamera* pCamera = new CCamera();
     pCamera->SetViewport(0, 0, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
     pCamera->GeneratePerspectiveProjectionMatrix(1.01f, 500.0f, 60.0f);
@@ -29,13 +31,11 @@ void CLevel2::BuildObjects()
     float fUpperHeight = 2.0f;
     float fUpperWidth = 6.0f;
 
-    m_pPlayer->m_fBottomHeight = fBottomHeight;
-    m_pPlayer->m_fUpperHeight = fUpperHeight;
-    m_pPlayer->m_fUpperWidth = fUpperWidth;
+    m_pPlayer->setSize(fBottomHeight, fUpperHeight, fUpperWidth);
 
-    CCubeMesh* pLowerBodyMesh = new CCubeMesh(8.0f, m_pPlayer->m_fBottomHeight, 12.0f);   // 밑몸통: 길고 낮게
-    CCubeMesh* pUpperBodyMesh = new CCubeMesh(6.0f, m_pPlayer->m_fUpperHeight, 6.0f);    // 위몸통(포탑): 정사각형
-    CCubeMesh* pTurretMesh = new CCubeMesh(1.0f, 1.0f, m_pPlayer->m_fUpperWidth);    // 포신: 얇고 긴 총알통
+    CCubeMesh* pLowerBodyMesh = new CCubeMesh(8.0f, fBottomHeight, 12.0f);   // 밑몸통: 길고 낮게
+    CCubeMesh* pUpperBodyMesh = new CCubeMesh(6.0f, fUpperHeight, 6.0f);    // 위몸통(포탑): 정사각형
+    CCubeMesh* pTurretMesh = new CCubeMesh(1.0f, 1.0f, fUpperWidth);    // 포신: 얇고 긴 총알통
 
     // 2. CTankPlayer에 메쉬 연결
     m_pPlayer->SetTankMesh(pLowerBodyMesh, pUpperBodyMesh, pTurretMesh);
@@ -43,15 +43,30 @@ void CLevel2::BuildObjects()
     // 3. 색깔 설정 (선택)
     m_pPlayer->SetColor(RGB(0, 100, 0)); // 기본 탱크 색
 
+    // 적 탱크 생성
     for (int i = 0; i < 10; ++i)
     {
         CTankEnemy* pEnemy = new CTankEnemy();
-        pEnemy->m_fBottomHeight = fBottomHeight;
-        pEnemy->m_fUpperHeight = fUpperHeight;
-        pEnemy->m_fUpperWidth = fUpperWidth;
-        pEnemy->SetPosition(i*100.0f,0.0f,0.0f);
+        pEnemy->setSize(fBottomHeight, fUpperHeight, fUpperWidth);
+
+
+        float ex = (rand() % 501) - 250; // -500 ~ +500
+        float ez = (rand() % 501) - 250;
+        pEnemy->SetPosition(ex, 0.0f, ez);
+
+        // 랜덤 방향 회전 (Yaw -180 ~ +180도)
+        float yaw = ((rand() % 360) - 180); // -180도 ~ +180도
+        pEnemy->Rotate(yaw);
+
         pEnemy->SetTankMesh(pLowerBodyMesh, pUpperBodyMesh, pTurretMesh);
         m_pEnemies.push_back(pEnemy);
+    }
+
+    for (int i = 0; i < m_pEnemies.size(); ++i)
+    {
+        CExplosiveObject* pExplosion = new CExplosiveObject();
+        pExplosion->SetActive(false); // 처음에는 비활성
+        m_pExplosions.push_back(pExplosion);
     }
 
     CCubeMesh* ObstacleMesh = new CCubeMesh(16.0f, 16.0f, 16.0f);
@@ -60,13 +75,18 @@ void CLevel2::BuildObjects()
     for (int i = 0; i < 5; ++i)
     {
         CGameObject* pObstacle = new CGameObject();
-        float x = (rand() % 200) - 100;
-        float z = (rand() % 200) - 100;
-        pObstacle->SetPosition(x, 0.0f, z);
+        float ox = (rand() % 501) - 250; // -500 ~ +500
+        float oz = (rand() % 501) - 250;
+        pObstacle->SetPosition(ox, 8.0f, oz);
+
         pObstacle->SetMesh(ObstacleMesh);
         pObstacle->SetColor(RGB(255, 50, 10));
         m_pObstacles.push_back(pObstacle);
     }
+
+    m_pWinText = new CTextObject(L"YOU WIN!");
+    m_pWinText->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f)); // 0,0 위쪽에 띄움
+    m_pWinText->SetColor(RGB(255, 0, 0)); // 강조 색상
 }
 
 void CLevel2::ReleaseObjects()
@@ -79,11 +99,18 @@ void CLevel2::ReleaseObjects()
 
     for (auto& enemy : m_pEnemies)
         delete enemy;
+
     m_pEnemies.clear();
 
     for (auto& obstacle : m_pObstacles)
         delete obstacle;
+
     m_pObstacles.clear();
+
+    if (m_pWinText) {
+        delete m_pWinText;
+        m_pWinText = nullptr;
+    }
 }
 
 void CLevel2::Animate(float fElapsedTime)
@@ -105,6 +132,15 @@ void CLevel2::Animate(float fElapsedTime)
     for (auto& obstacle : m_pObstacles)
         obstacle->Animate(fElapsedTime);
 
+    for (auto& explosion : m_pExplosions)
+    {
+        if (explosion->m_bActive)
+            explosion->Animate(fElapsedTime);
+    }
+
+    if (m_pWinText && m_bShowWinMessage) {
+        m_pWinText->Animate(fElapsedTime);
+    }
 
     // 충돌 검사
     CheckPlayerEnemyCollision();
@@ -122,10 +158,14 @@ void CLevel2::Render(HDC hDCFrameBuffer)
         enemy->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
     for (auto& obstacle : m_pObstacles)
         obstacle->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
-    // 승리 메시지 출력
-    if (m_bShowWinMessage)
+    for (auto& explosion : m_pExplosions)
     {
-        TextOut(hDCFrameBuffer, 400, 300, _T("You Win!"), 8);
+        if (explosion->m_bActive)
+            explosion->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
+    }
+    // 승리 메시지 출력
+    if (m_pWinText && m_bShowWinMessage) {
+        m_pWinText->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
     }
 }
 
@@ -301,9 +341,10 @@ void CLevel2::CheckBulletEnemyCollision()
                     if (pEnemy->m_xmOOBB.Intersects(ppBullets[i]->m_xmOOBB))
                     {
                         // 적 폭발 처리
-                        //pEnemy->m_bBlowingUp = true;
+                        TriggerExplosion(pEnemy->GetPosition(), pEnemy->m_dwColor); // 색상 유지
 
-                        pEnemy->SetActive(false);
+                        delete pEnemy;         // 적 삭제
+                        enemyIt = m_pEnemies.erase(enemyIt);
 
                         // 총알 리셋
                         ppBullets[i]->Reset();
@@ -315,8 +356,7 @@ void CLevel2::CheckBulletEnemyCollision()
                 }
             }
         }
-
-        ++enemyIt;
+        if (!bHit) ++enemyIt;
     }
 }
 
@@ -377,3 +417,17 @@ void CLevel2::CheckObstacleCollision()
     }
 }
 
+void CLevel2::TriggerExplosion(XMFLOAT3 position, COLORREF color)
+{
+    for (auto& explosion : m_pExplosions)
+    {
+        if (!explosion->m_bActive)
+        {
+            explosion->SetPosition(position);
+            explosion->SetColor(color);
+            explosion->SetActive(true);
+            explosion->m_bBlowingUp = true;
+            break;
+        }
+    }
+}

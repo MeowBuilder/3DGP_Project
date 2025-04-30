@@ -27,20 +27,15 @@ void CScene::BuildObjects()
 	m_pPlayer->SetColor(RGB(0, 0, 255));
 	m_pPlayer->SetCamera(pCamera);
 	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 5.0f, -15.0f));
-
-#ifdef _WITH_DRAW_AXIS
-	m_pWorldAxis = new CGameObject();
-	CAxisMesh* pAxisMesh = new CAxisMesh(0.5f, 0.5f, 0.5f);
-	m_pWorldAxis->SetMesh(pAxisMesh);
-#endif
 }
 
 void CScene::ReleaseObjects()
 {
-
-#ifdef _WITH_DRAW_AXIS
-	if (m_pWorldAxis) delete m_pWorldAxis;
-#endif
+	if (m_pPlayer)
+	{
+		delete m_pPlayer;
+		m_pPlayer = nullptr;
+	}
 }
 
 void CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -105,10 +100,4 @@ void CScene::Render(HDC hDCFrameBuffer)
 	CGraphicsPipeline::SetViewPerspectiveProjectTransform(&pCamera->m_xmf4x4ViewPerspectiveProject);
 
 	if (m_pPlayer) m_pPlayer->Render(hDCFrameBuffer, pCamera);
-
-#ifdef _WITH_DRAW_AXIS
-	CGraphicsPipeline::SetViewOrthographicProjectTransform(&pCamera->m_xmf4x4ViewOrthographicProject);
-	m_pWorldAxis->SetRotationTransform(&m_pPlayer->m_xmf4x4World);
-	m_pWorldAxis->Render(hDCFrameBuffer, pCamera);
-#endif
 }

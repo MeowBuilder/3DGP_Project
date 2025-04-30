@@ -28,6 +28,9 @@ private:
     CTankPlayer* m_pPlayer = nullptr;
     std::vector<CTankEnemy*> m_pEnemies;
     std::vector<CGameObject*> m_pObstacles;
+    std::vector<CExplosiveObject*> m_pExplosions;
+
+    CTextObject* m_pWinText = nullptr;
 
     CGameObject* m_pLockedObject = nullptr;
 
@@ -45,4 +48,5 @@ private:
     void CheckBulletEnemyCollision();
     void CheckObstacleCollision();
     void CheckWinCondition();
+    void TriggerExplosion(XMFLOAT3 position, COLORREF color);
 };
