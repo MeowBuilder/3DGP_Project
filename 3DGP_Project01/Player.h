@@ -80,8 +80,15 @@ public:
     virtual ~CTankPlayer();
 	void SetCameraOffset(XMFLOAT3& xmf3CameraOffset);
 
+	void setPrePos() { m_xmf3PrePos = m_xmf3Position; };
+	XMFLOAT3 getPrePos() { return m_xmf3PrePos; };
+
     virtual void Animate(float fElapsedTime);
     virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+	void FireBullet(CGameObject*);
+
+	float m_fBulletEffectiveRange = 1500.0f;
+	CBulletObject* m_ppBullets[BULLETS];
 
 	void Rotate(float fYaw);
 
@@ -89,6 +96,7 @@ public:
 	void RotateCameraOffset(float fAngleDegree);
 
 	void UpdateTopParts();
+	void UpdateBoundingBox();
 
     // 추가 멤버 변수
     CMesh* m_pMeshLowerBody = nullptr; // 밑몸통
@@ -107,6 +115,8 @@ public:
 	XMFLOAT3 m_xmf3TopRight = { 1.0f, 0.0f, 0.0f };
 	XMFLOAT3 m_xmf3TopUp = { 0.0f, 1.0f, 0.0f };
 	XMFLOAT3 m_xmf3TopLook = { 0.0f, 0.0f, 1.0f };
+
+	XMFLOAT3 m_xmf3PrePos = { 0.0f, 0.0f, 0.0f };
 
 	XMFLOAT3 m_xmf3BaseCameraOffset; // ★ 고정된 기본 오프셋 추가
 };

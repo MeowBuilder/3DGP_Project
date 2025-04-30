@@ -23,19 +23,26 @@ public:
     virtual void ProcessInput(UCHAR* pKeyBuffer) override;
     virtual void ProcessMouseInput(float dx, float dy, bool bRightButton) override;
 
+    CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
 private:
     CTankPlayer* m_pPlayer = nullptr;
     std::vector<CTankEnemy*> m_pEnemies;
     std::vector<CGameObject*> m_pObstacles;
 
-    bool m_bAutoAttack = false;
+    CGameObject* m_pLockedObject = nullptr;
+
     bool m_bShield = false;
     bool m_bShowWinMessage = false;
 
     bool m_bSceneChange = false;
     int m_nNextSceneID = -1;
 
-    void FirePlayerBullet();
-    void CheckBulletCollisions();
+    bool m_bAutoFire = false;
+    float m_fAutoFireElapsed = 0.0f;   // 자동 공격 시간 누적
+    float m_fAutoFireInterval = 1.0f;  // 1초에 한 발
+
+    void CheckPlayerEnemyCollision();
+    void CheckBulletEnemyCollision();
+    void CheckObstacleCollision();
     void CheckWinCondition();
 };

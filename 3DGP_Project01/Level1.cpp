@@ -143,7 +143,7 @@ void CLevel1::Animate(float fElapsedTime)
         UpdatePlayerOnRail(fElapsedTime);
     }
 
-    for (auto pRail : m_pRailObjects)
+    for (auto& pRail : m_pRailObjects)
         pRail->Animate(fElapsedTime);
 }
 
@@ -225,7 +225,7 @@ void CLevel1::Render(HDC hDCFrameBuffer)
     CGraphicsPipeline::SetViewPerspectiveProjectTransform(&pCamera->m_xmf4x4ViewPerspectiveProject);
 
     // 레일 렌더링
-    for (auto pRail : m_pRailObjects)
+    for (auto& pRail : m_pRailObjects)
         pRail->Render(hDCFrameBuffer, pCamera);
 
     // [추가] 플레이어 렌더링

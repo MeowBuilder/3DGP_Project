@@ -242,6 +242,16 @@ void CAirplanePlayer::FireBullet(CGameObject* pLockedObject)
 CTankPlayer::CTankPlayer()
 {
 	// 기본 생성자
+	CCubeMesh* pBulletMesh = new CCubeMesh(2.0f, 2.0f, 2.0f);
+	for (int i = 0; i < BULLETS; i++)
+	{
+		m_ppBullets[i] = new CBulletObject(m_fBulletEffectiveRange);
+		m_ppBullets[i]->SetMesh(pBulletMesh);
+		m_ppBullets[i]->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
+		m_ppBullets[i]->SetRotationSpeed(0.0f);
+		m_ppBullets[i]->SetMovingSpeed(120.0f);
+		m_ppBullets[i]->SetActive(false);
+	}
 }
 
 CTankPlayer::~CTankPlayer()
@@ -275,21 +285,33 @@ void CTankPlayer::Rotate(float fYaw)
 
 void CTankPlayer::Animate(float fElapsedTime)
 {
+	if (!m_bActive) return;
+
 	UpdateTopParts(); // [★추가] 카메라와 동기화
 
 	CPlayer::Animate(fElapsedTime);
 
-	// 필요시 위몸통과 포신 추가 애니메이션 처리 가능
+	for (int i = 0; i < BULLETS; i++)
+	{
+		if (m_ppBullets[i]->m_bActive) m_ppBullets[i]->Animate(fElapsedTime);
+	}
 
 	if (m_pCamera)
 	{
 		m_pCamera->SetLookAt(Vector3::Add(m_xmf3Position, m_xmf3CameraOffset), m_xmf3Position, XMFLOAT3(0.0f, 1.0f, 0.0f));
 		m_pCamera->GenerateViewMatrix();
 	}
+
+	UpdateBoundingBox();
 }
 
 void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 {
+	if (!m_bActive) return;
+
+	HPEN hPen = ::CreatePen(PS_SOLID, 0, m_dwColor);
+	HPEN hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
+
 	// 아랫몸통 (Player 기본 방향으로 렌더링)
 	if (m_pMeshLowerBody)
 	{
@@ -331,6 +353,11 @@ void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		CGraphicsPipeline::SetWorldTransform(&xmf4CannonWorld);
 		m_pMeshTurret->Render(hDCFrameBuffer);
 	}
+
+	::SelectObject(hDCFrameBuffer, hOldPen);
+	::DeleteObject(hPen);
+
+	for (int i = 0; i < BULLETS; i++) if (m_ppBullets[i]->m_bActive) m_ppBullets[i]->Render(hDCFrameBuffer, pCamera);
 }
 
 
@@ -340,6 +367,43 @@ void CTankPlayer::SetTankMesh(CMesh* pLowerBodyMesh, CMesh* pUpperBodyMesh, CMes
 	m_pMeshLowerBody = pLowerBodyMesh;
 	m_pMeshUpperBody = pUpperBodyMesh;
 	m_pMeshTurret = pTurretMesh;
+
+	// Mesh에 따른 OOBB생성
+	BoundingOrientedBox boxLower = m_pMeshLowerBody->m_xmOOBB;
+	BoundingOrientedBox boxUpper = m_pMeshUpperBody->m_xmOOBB;
+
+	// 윗몸통은 y축으로 m_fBottomHeight 만큼 위에 있으니까 보정
+	boxUpper.Center.y += m_fBottomHeight;
+
+	// 두 박스를 합쳐서 최종 OBB 계산
+	XMFLOAT3 minPos = {
+		min(boxLower.Center.x - boxLower.Extents.x, boxUpper.Center.x - boxUpper.Extents.x),
+		min(boxLower.Center.y - boxLower.Extents.y, boxUpper.Center.y - boxUpper.Extents.y),
+		min(boxLower.Center.z - boxLower.Extents.z, boxUpper.Center.z - boxUpper.Extents.z)
+	};
+
+	XMFLOAT3 maxPos = {
+		max(boxLower.Center.x + boxLower.Extents.x, boxUpper.Center.x + boxUpper.Extents.x),
+		max(boxLower.Center.y + boxLower.Extents.y, boxUpper.Center.y + boxUpper.Extents.y),
+		max(boxLower.Center.z + boxLower.Extents.z, boxUpper.Center.z + boxUpper.Extents.z)
+	};
+
+	XMFLOAT3 center = {
+		(minPos.x + maxPos.x) * 0.5f,
+		(minPos.y + maxPos.y) * 0.5f,
+		(minPos.z + maxPos.z) * 0.5f
+	};
+
+	XMFLOAT3 extents = {
+		(maxPos.x - minPos.x) * 0.5f,
+		(maxPos.y - minPos.y) * 0.5f,
+		(maxPos.z - minPos.z) * 0.5f
+	};
+
+	// 최종 바운딩 박스 세팅
+	m_xmOOBB.Center = center;
+	m_xmOOBB.Extents = extents;
+	XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionIdentity());
 }
 
 void CTankPlayer::RotateCameraOffset(float fAngleDegree)
@@ -385,4 +449,64 @@ void CTankPlayer::UpdateTopParts()
 
 	m_xmf3TopUp = XMFLOAT3(0.0f, 1.0f, 0.0f); // 항상 위로
 	m_xmf3TopRight = Vector3::Normalize(Vector3::CrossProduct(m_xmf3TopUp, m_xmf3TopLook));
+}
+
+void CTankPlayer::FireBullet(CGameObject* pLockedObject)
+{
+	CBulletObject* pBulletObject = NULL;
+
+	// 사용할 수 있는 비활성화된 총알 찾기
+	for (int i = 0; i < BULLETS; i++)
+	{
+		if (!m_ppBullets[i]->m_bActive)
+		{
+			pBulletObject = m_ppBullets[i];
+			break;
+		}
+	}
+
+	if (pBulletObject)
+	{
+		XMFLOAT3 firePos = GetPosition();
+		firePos.y += m_fBottomHeight + m_fUpperHeight * 0.1f; // 윗몸통 + 포신 위치 반영
+		firePos = Vector3::Add(firePos, Vector3::ScalarProduct(m_xmf3TopLook, m_fUpperWidth)); // 포신 앞으로 살짝
+
+		pBulletObject->SetFirePosition(firePos);
+		pBulletObject->SetMovingDirection(m_xmf3TopLook); // 포신 방향
+		pBulletObject->SetColor(RGB(255, 0, 0)); // 빨간 포탄
+		pBulletObject->SetActive(true);
+
+		if (pLockedObject)
+		{
+			pBulletObject->m_pLockedObject = pLockedObject;
+			pBulletObject->SetColor(RGB(0, 0, 255));
+		}
+	}
+}
+
+void CTankPlayer::UpdateBoundingBox()
+{
+	if (m_pMeshLowerBody && m_pMeshUpperBody)
+	{
+		// 밑몸통과 윗몸통의 OBB를 각각 변환
+		BoundingOrientedBox obbLower = m_pMeshLowerBody->m_xmOOBB;
+		BoundingOrientedBox obbUpper = m_pMeshUpperBody->m_xmOOBB;
+
+		obbLower.Transform(obbLower, XMLoadFloat4x4(&m_xmf4x4World));
+
+		// 윗몸통은 약간 위로 올라가 있으니까 반영
+		XMFLOAT4X4 upperWorld = m_xmf4x4World;
+		upperWorld._42 += m_fBottomHeight; // 아랫몸통 높이만큼 Y축 올림
+		obbUpper.Transform(obbUpper, XMLoadFloat4x4(&upperWorld));
+
+		// 두 OBB를 포함하는 AABB를 만들고, 다시 OBB로 변환
+		BoundingBox aabb;
+		BoundingBox::CreateMerged(aabb, BoundingBox(obbLower.Center, obbLower.Extents), BoundingBox(obbUpper.Center, obbUpper.Extents));
+
+		// 새롭게 OBB를 만든다
+		BoundingOrientedBox::CreateFromBoundingBox(m_xmOOBB, aabb);
+
+		// 방향은 일단 Identity로 (정확한 방향은 필요 없고 충돌용)
+		m_xmOOBB.Orientation = XMFLOAT4(0, 0, 0, 1);
+	}
 }
