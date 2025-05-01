@@ -3,6 +3,7 @@
 
 CLevel2::CLevel2()
 {
+    m_pPlayer = nullptr;
 }
 
 CLevel2::~CLevel2()

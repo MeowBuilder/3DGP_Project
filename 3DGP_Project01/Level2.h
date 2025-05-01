@@ -9,8 +9,8 @@ public:
     CLevel2();
     virtual ~CLevel2();
 
-    bool IsFinished() const override { return m_bSceneChange; }
-    int GetNextSceneID() const override { return m_nNextSceneID; }
+    virtual bool IsFinished() const override { return m_bSceneChange; }
+    virtual int GetNextSceneID() const override { return m_nNextSceneID; }
 
     virtual void BuildObjects() override;
     virtual void ReleaseObjects() override;

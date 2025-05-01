@@ -39,6 +39,5 @@ public:
 	virtual void UpdateCamera(float fElapsedTime);
 
 	virtual bool IsFinished() const { return m_bSceneFinished; }
-
 	virtual int GetNextSceneID() const { return m_nNextSceneID; }
 };

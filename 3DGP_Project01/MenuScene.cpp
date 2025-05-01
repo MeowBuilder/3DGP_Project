@@ -2,7 +2,7 @@
 
 CMenuScene::CMenuScene()
 {
-	m_pPlayer = NULL;
+	m_pPlayer = nullptr;
 }
 
 CMenuScene::~CMenuScene()

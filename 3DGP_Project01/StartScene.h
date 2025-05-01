@@ -34,7 +34,8 @@ public:
 	virtual void BuildObjects();
 	virtual void ReleaseObjects();
 
-	bool IsFinished() const override { return m_bExplosionFinished; }
+	virtual bool IsFinished() const override { return m_bExplosionFinished; }
+	virtual int GetNextSceneID() const override { return m_nNextSceneID; }
 
 	virtual void Animate(float fElapsedTime);
 	virtual void Render(HDC hDCFrameBuffer);
@@ -49,9 +50,6 @@ public:
 
 	virtual CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
 
-	int GetNextSceneID() const override
-	{
-		return m_nNextSceneID;
-	}
+
 };
 

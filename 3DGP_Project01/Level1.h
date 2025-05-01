@@ -15,8 +15,8 @@ public:
     CLevel1();
     virtual ~CLevel1();
 
-    bool IsFinished() const override { return m_bRailFinished; }
-    int GetNextSceneID() const override { return m_nNextSceneID; }
+    virtual bool IsFinished() const override { return m_bRailFinished; }
+    virtual int GetNextSceneID() const override { return m_nNextSceneID; }
 
     virtual void BuildObjects() override;
     virtual void ReleaseObjects() override;

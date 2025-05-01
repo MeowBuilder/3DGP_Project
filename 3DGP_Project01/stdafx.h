@@ -52,14 +52,25 @@ inline bool IsEqual(float fA, float fB) { return(::IsZero(fA - fB)); }
 
 namespace Vector3
 {
-	// 직접 추가 (선형 보간)
+	inline XMFLOAT3 CatmullRom(const XMFLOAT3& p0, const XMFLOAT3& p1, const XMFLOAT3& p2, const XMFLOAT3& p3, float t)
+	{
+		XMVECTOR v0, v1, v2, v3;
+		v0 = XMLoadFloat3(&p0);
+		v1 = XMLoadFloat3(&p1);
+		v2 = XMLoadFloat3(&p2);
+		v3 = XMLoadFloat3(&p3);
+		XMFLOAT3 xmf3Result;
+
+		XMStoreFloat3(&xmf3Result, XMVectorCatmullRom(v0, v1, v2, v3, t));
+
+		return xmf3Result;
+	}
+
 	inline XMFLOAT3 Lerp(const XMFLOAT3& a, const XMFLOAT3& b, float t)
 	{
-		return XMFLOAT3(
-			a.x + (b.x - a.x) * t,
-			a.y + (b.y - a.y) * t,
-			a.z + (b.z - a.z) * t
-		);
+		XMFLOAT3 xmf3Result;
+		XMStoreFloat3(&xmf3Result,XMVectorLerp(XMLoadFloat3(&a), XMLoadFloat3(&b), t));
+		return xmf3Result;
 	}
 
 	inline XMFLOAT3 XMVectorToFloat3(XMVECTOR& xmvVector)

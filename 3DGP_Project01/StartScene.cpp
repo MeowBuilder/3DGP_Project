@@ -2,7 +2,7 @@
 
 CStartScene::CStartScene()
 {
-	m_pPlayer = NULL;
+	m_pPlayer = nullptr;
 }
 
 CStartScene::~CStartScene()
