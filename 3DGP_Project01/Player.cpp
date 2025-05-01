@@ -233,7 +233,6 @@ void CAirplanePlayer::FireBullet(CGameObject* pLockedObject)
 
 CTankPlayer::CTankPlayer()
 {
-	// 기본 생성자
 	CCubeMesh* pBulletMesh = new CCubeMesh(2.0f, 2.0f, 2.0f);
 	for (int i = 0; i < BULLETS; i++)
 	{
@@ -248,10 +247,14 @@ CTankPlayer::CTankPlayer()
 
 CTankPlayer::~CTankPlayer()
 {
-	// 메쉬 소멸은 메쉬가 공유라면 별도 delete 하지 않아야 함
+	m_pMeshLowerBody->Release();
 	m_pMeshLowerBody = nullptr;
+	m_pMeshUpperBody->Release();
 	m_pMeshUpperBody = nullptr;
+	m_pMeshTurret->Release();
 	m_pMeshTurret = nullptr;
+
+	for (int i = 0; i < BULLETS; i++) if (m_ppBullets[i]) delete m_ppBullets[i];
 }
 
 void CTankPlayer::SetCameraOffset(XMFLOAT3& xmf3CameraOffset)
@@ -266,7 +269,6 @@ void CTankPlayer::Rotate(float fYaw)
 {
 	XMMATRIX mtxRotate = XMMatrixRotationY(XMConvertToRadians(fYaw));
 
-	// 플레이어 자체는 회전
 	m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, mtxRotate);
 	m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, mtxRotate);
 
@@ -279,7 +281,7 @@ void CTankPlayer::Animate(float fElapsedTime)
 {
 	if (!m_bActive) return;
 
-	UpdateTopParts(); // [★추가] 카메라와 동기화
+	UpdateTopParts();
 
 	CPlayer::Animate(fElapsedTime);
 
@@ -304,14 +306,12 @@ void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 	HPEN hPen = ::CreatePen(PS_SOLID, 0, m_dwColor);
 	HPEN hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
 
-	// 아랫몸통 (Player 기본 방향으로 렌더링)
 	if (m_pMeshLowerBody)
 	{
 		CGraphicsPipeline::SetWorldTransform(&m_xmf4x4World);
 		m_pMeshLowerBody->Render(hDCFrameBuffer);
 	}
 
-	// 윗몸통 (TopLook 기준으로 렌더링)
 	if (m_pMeshUpperBody)
 	{
 		XMFLOAT4X4 xmf4TopWorld = m_xmf4x4World;
@@ -319,13 +319,12 @@ void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		xmf4TopWorld._21 = m_xmf3TopUp.x;    xmf4TopWorld._22 = m_xmf3TopUp.y;    xmf4TopWorld._23 = m_xmf3TopUp.z;
 		xmf4TopWorld._31 = m_xmf3TopLook.x;  xmf4TopWorld._32 = m_xmf3TopLook.y;  xmf4TopWorld._33 = m_xmf3TopLook.z;
 
-		xmf4TopWorld._42 += m_fBottomHeight; // 아랫몸체 위로
+		xmf4TopWorld._42 += m_fBottomHeight;
 
 		CGraphicsPipeline::SetWorldTransform(&xmf4TopWorld);
 		m_pMeshUpperBody->Render(hDCFrameBuffer);
 	}
 
-	// 포신 (TopLook 기준, Top 앞쪽으로 약간 이동)
 	if (m_pMeshTurret)
 	{
 		XMFLOAT4X4 xmf4CannonWorld = Matrix4x4::Identity();
@@ -333,10 +332,9 @@ void CTankPlayer::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		xmf4CannonWorld._21 = m_xmf3TopUp.x;    xmf4CannonWorld._22 = m_xmf3TopUp.y;    xmf4CannonWorld._23 = m_xmf3TopUp.z;
 		xmf4CannonWorld._31 = m_xmf3TopLook.x;  xmf4CannonWorld._32 = m_xmf3TopLook.y;  xmf4CannonWorld._33 = m_xmf3TopLook.z;
 
-		// 포신 위치 = 윗몸통 위치 + 윗몸통 Look 방향으로 살짝 전진
 		XMFLOAT3 basePos = GetPosition();
-		basePos.y += m_fBottomHeight + m_fUpperHeight * 0.1f; // 윗몸통 높이 반영
-		basePos = Vector3::Add(basePos, Vector3::ScalarProduct(m_xmf3TopLook, m_fUpperWidth)); // 약간 전진
+		basePos.y += m_fBottomHeight + m_fUpperHeight * 0.1f;
+		basePos = Vector3::Add(basePos, Vector3::ScalarProduct(m_xmf3TopLook, m_fUpperWidth));
 
 		xmf4CannonWorld._41 = basePos.x;
 		xmf4CannonWorld._42 = basePos.y;
@@ -357,17 +355,17 @@ void CTankPlayer::SetTankMesh(CMesh* pLowerBodyMesh, CMesh* pUpperBodyMesh, CMes
 {
 	if (!pLowerBodyMesh || !pUpperBodyMesh || !pTurretMesh) return;
 	m_pMeshLowerBody = pLowerBodyMesh;
+	pLowerBodyMesh->AddRef();
 	m_pMeshUpperBody = pUpperBodyMesh;
+	pUpperBodyMesh->AddRef();
 	m_pMeshTurret = pTurretMesh;
+	pTurretMesh->AddRef();
 
-	// Mesh에 따른 OOBB생성
 	BoundingOrientedBox boxLower = m_pMeshLowerBody->m_xmOOBB;
 	BoundingOrientedBox boxUpper = m_pMeshUpperBody->m_xmOOBB;
 
-	// 윗몸통은 y축으로 m_fBottomHeight 만큼 위에 있으니까 보정
 	boxUpper.Center.y += m_fBottomHeight;
 
-	// 두 박스를 합쳐서 최종 OBB 계산
 	XMFLOAT3 minPos = {
 		min(boxLower.Center.x - boxLower.Extents.x, boxUpper.Center.x - boxUpper.Extents.x),
 		min(boxLower.Center.y - boxLower.Extents.y, boxUpper.Center.y - boxUpper.Extents.y),
@@ -392,7 +390,6 @@ void CTankPlayer::SetTankMesh(CMesh* pLowerBodyMesh, CMesh* pUpperBodyMesh, CMes
 		(maxPos.z - minPos.z) * 0.5f
 	};
 
-	// 최종 바운딩 박스 세팅
 	m_xmOOBB.Center = center;
 	m_xmOOBB.Extents = extents;
 	XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionIdentity());
@@ -427,19 +424,15 @@ void CTankPlayer::UpdateTopParts()
 {
 	if (!m_pCamera) return;
 
-	// 카메라 Look 방향을 가져오고
 	XMFLOAT3 camLook = m_pCamera->GetLook();
 
-	// Y값 제거 → 수평(XZ) 방향만 남김
 	camLook.y = 0.0f;
 
-	// 방향 정규화
 	camLook = Vector3::Normalize(camLook);
 
-	// 윗몸통의 기준 벡터 설정
 	m_xmf3TopLook = camLook;
 
-	m_xmf3TopUp = XMFLOAT3(0.0f, 1.0f, 0.0f); // 항상 위로
+	m_xmf3TopUp = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3TopRight = Vector3::Normalize(Vector3::CrossProduct(m_xmf3TopUp, m_xmf3TopLook));
 }
 
