@@ -59,12 +59,6 @@ void CMenuScene::BuildObjects()
 	pText5->SetPosition(XMFLOAT3(40.0f, -20.0f, textZpos));
 	pText5->SetTargetSceneID(-2);
 	m_pTextObjects.push_back(pText5);
-
-#ifdef _WITH_DRAW_AXIS
-	m_pWorldAxis = new CGameObject();
-	CAxisMesh* pAxisMesh = new CAxisMesh(0.5f, 0.5f, 0.5f);
-	m_pWorldAxis->SetMesh(pAxisMesh);
-#endif
 }
 
 void CMenuScene::ReleaseObjects()
@@ -81,10 +75,6 @@ void CMenuScene::ReleaseObjects()
 		delete m_pPlayer;
 		m_pPlayer = nullptr;
 	}
-
-#ifdef _WITH_DRAW_AXIS
-	if (m_pWorldAxis) delete m_pWorldAxis;
-#endif
 }
 
 void CMenuScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -93,25 +83,14 @@ void CMenuScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
 	{
 	case WM_MOUSEMOVE:
 	{
-		// 마우스 위치를 계산
-		int xClient = LOWORD(lParam);
-		int yClient = HIWORD(lParam);
-
-		// 마우스 위치에 따른 점 좌표 업데이트
-		m_xmf3PickPosition.x = (float)xClient;
-		m_xmf3PickPosition.y = (float)yClient;
-
-		// 마우스가 올려진 텍스트 객체 찾기
 		m_pHitText = dynamic_cast<CTextObject*>(PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pPlayer->m_pCamera));
 
-		// 모든 텍스트 오브젝트 색상 초기화 (빨간색)
 		for (auto& pText : m_pTextObjects)
-			pText->SetColor(RGB(255, 0, 0));  // 기본 빨간색
+			pText->SetColor(RGB(255, 0, 0));
 
-		// 마우스가 텍스트 위에 있으면 색상을 파란색으로 변경
 		if (m_pHitText)
 		{
-			m_pHitText->SetColor(RGB(0, 0, 255));  // 파란색
+			m_pHitText->SetColor(RGB(0, 0, 255));
 		}
 	}
 	break;
@@ -149,7 +128,7 @@ void CMenuScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM 
 		{
 		case VK_ESCAPE:
 			m_nNextSceneID = 0;
-			m_bExplosionFinished = true;
+			m_bSceneFinished = true;
 			break;
 		default:
 			break;
@@ -210,7 +189,7 @@ void CMenuScene::Animate(float fElapsedTime)
 
 			delete (*it);
 			it = m_pExplosions.erase(it);
-			m_bExplosionFinished = true;
+			m_bSceneFinished = true;
 		}
 		else ++it;
 	}
@@ -228,22 +207,6 @@ void CMenuScene::Render(HDC hDCFrameBuffer)
 
 	for (auto pExplosion : m_pExplosions)
 		pExplosion->Render(hDCFrameBuffer, pCamera);
-
-	// 파란 점 그리기 (마우스 위치에 따라 점 그리기)
-	HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 255));  // 파란색 점
-	SelectObject(hDCFrameBuffer, hBrush);
-	Ellipse(hDCFrameBuffer,
-		(int)m_xmf3PickPosition.x - 5, (int)m_xmf3PickPosition.y - 5,
-		(int)m_xmf3PickPosition.x + 5, (int)m_xmf3PickPosition.y + 5);  // 10px 크기의 점
-
-	// 원래 브러시 복원
-	DeleteObject(hBrush);
-
-#ifdef _WITH_DRAW_AXIS
-	CGraphicsPipeline::SetViewOrthographicProjectTransform(&pCamera->m_xmf4x4ViewOrthographicProject);
-	m_pWorldAxis->SetRotationTransform(&m_pPlayer->m_xmf4x4World);
-	m_pWorldAxis->Render(hDCFrameBuffer, pCamera);
-#endif
 }
 
 void CMenuScene::UpdateCamera(float fElapsedTime)

@@ -12,17 +12,12 @@ public:
 	CScene();
 	virtual ~CScene();
 
-private:
+protected:
 	CPlayer* m_pPlayer = NULL;
 
 	int m_nNextSceneID = -1;
 
 	bool m_bSceneFinished = false;
-
-#ifdef _WITH_DRAW_AXIS
-	CGameObject* m_pWorldAxis = NULL;
-#endif
-
 public:
 	virtual void BuildObjects();
 	virtual void ReleaseObjects();

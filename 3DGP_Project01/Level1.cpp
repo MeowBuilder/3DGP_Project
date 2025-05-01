@@ -52,8 +52,7 @@ void CLevel1::ReleaseObjects()
 
 void CLevel1::BuildRailSegments()
 {
-    m_ControlPoints.clear();
-    m_RailSegments.clear();
+    std::vector<XMFLOAT3> m_ControlPoints;
 
     // 기준 점 설정
     m_ControlPoints.push_back(XMFLOAT3(100.0f, 0.0f, 0.0f));
@@ -65,7 +64,6 @@ void CLevel1::BuildRailSegments()
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 100.0f, 100.0f));
     m_ControlPoints.push_back(XMFLOAT3(100.0f, 0.0f, 0.0f));
 
-    // 보간용 가상 점 추가 (양 끝 연결 자연스럽게)
     std::vector<XMFLOAT3> tempPoints = m_ControlPoints;
     tempPoints.insert(tempPoints.begin(), m_ControlPoints[m_ControlPoints.size() - 2]);
     tempPoints.push_back(m_ControlPoints[1]);
@@ -99,8 +97,6 @@ void CLevel1::BuildRailSegments()
     }
 }
 
-
-
 void CLevel1::BuildRailObjects()
 {
     for (const auto& segment : m_RailSegments)
@@ -128,7 +124,6 @@ void CLevel1::Animate(float fElapsedTime)
 
 void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
 {
-    float speed = 5.0f;
     m_fRailProgress += speed * fElapsedTime;
 
     if (m_fRailProgress >= 1.0f)
@@ -139,7 +134,7 @@ void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
         if (m_nCurrentRailIndex >= m_RailSegments.size())
         {
             m_nNextSceneID = 3;
-            m_bRailFinished = true;
+            m_bSceneFinished = true;
             m_nCurrentRailIndex = 0;
             return;
         }
@@ -148,9 +143,7 @@ void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
     const RailSegment& seg0 = m_RailSegments[m_nCurrentRailIndex];
     const RailSegment& seg1 = m_RailSegments[(m_nCurrentRailIndex + 1) % m_RailSegments.size()];
 
-    // ----------------------------
-    // 1. 플레이어 이동 (보간)
-    // ----------------------------
+    // 플레이어 이동 (보간)
     XMFLOAT3 pos = Vector3::Lerp(seg0.position, seg1.position, m_fRailProgress);
     m_pPlayer->SetPosition(pos.x, pos.y, pos.z);
 
@@ -161,7 +154,6 @@ void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
     railDirection = Vector3::Normalize(railDirection);
 
     XMFLOAT3 currentLook = m_pPlayer->GetLook();
-    float fRotateLerpSpeed = 5.0f;
     XMFLOAT3 newLook = Vector3::Lerp(currentLook, railDirection, fRotateLerpSpeed * fElapsedTime);
     newLook = Vector3::Normalize(newLook);
 
@@ -189,7 +181,6 @@ void CLevel1::UpdatePlayerOnRail(float fElapsedTime)
     m_pPlayer->GetCamera()->SetLookAt(camPos, playerPos, playerUp);
     m_pPlayer->GetCamera()->GenerateViewMatrix();
 
-    // ----------------------------
     m_pPlayer->Animate(fElapsedTime);
 }
 
@@ -202,11 +193,9 @@ void CLevel1::Render(HDC hDCFrameBuffer)
     CGraphicsPipeline::SetViewport(&pCamera->m_Viewport);
     CGraphicsPipeline::SetViewPerspectiveProjectTransform(&pCamera->m_xmf4x4ViewPerspectiveProject);
 
-    // 레일 렌더링
     for (auto& pRail : m_pRailObjects)
         pRail->Render(hDCFrameBuffer, pCamera);
 
-    // [추가] 플레이어 렌더링
     if (m_pPlayer)
         m_pPlayer->Render(hDCFrameBuffer, pCamera);
 }
@@ -232,11 +221,11 @@ void CLevel1::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
         case 'n':
         case 'N':
             m_nNextSceneID = 3;
-            m_bRailFinished = true;
+            m_bSceneFinished = true;
             break;
         case VK_ESCAPE:
             m_nNextSceneID = 1;
-            m_bRailFinished = true;
+            m_bSceneFinished = true;
             break;
         default:
             break;

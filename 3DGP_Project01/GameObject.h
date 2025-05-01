@@ -154,16 +154,20 @@ public:
 
 	void PrepareMesh();
 	void ReleaseMesh();
-	void BuildCharacterShape(wchar_t ch); // 글자를 큐브들로 구성
+	void BuildCharacterShape(wchar_t ch);
 
 	virtual void Animate(float fElapsedTime) override;
 	void Render(HDC hDCFrameBuffer, CCamera* pCamera, const XMFLOAT3& parentOffset) ;
 
 	void SetRotationMatrix(const XMFLOAT4X4& xmf4x4Rotation) { m_xmf4x4Rotation = xmf4x4Rotation; }
 
+	void SetRotatedPos(const XMFLOAT3 xmf3RotatedPos) { m_xmf3RotatedPos = xmf3RotatedPos; }
+	XMFLOAT3 GetRotatedPos() { return m_xmf3RotatedPos; }
+
 	virtual int PickObjectByRayIntersection(XMVECTOR& xmPickPosition, XMMATRIX& xmmtxView, float* pfHitDistance, const XMFLOAT3& parentOffset);
 private:
 	XMFLOAT4X4 m_xmf4x4Rotation = Matrix4x4::Identity();
+	XMFLOAT3 m_xmf3RotatedPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
 
 class CTextObject : public CGameObject {
@@ -194,9 +198,9 @@ public:
 	}
 
 private:
-	float m_fRotationAngle = 0.0f;          // 누적 회전 각도
+	float m_fRotationAngle = 0.0f;
 	std::vector<CTextCharacterObject*> m_Characters;
-	int m_nTargetSceneID = -1; // 기본: 전환 없음
+	int m_nTargetSceneID = -1;
 };
 
 class CRailObject : public CGameObject

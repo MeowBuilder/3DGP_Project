@@ -22,8 +22,7 @@ void CLevel2::BuildObjects()
 
     pCamera->GenerateOrthographicProjectionMatrix(1.01f, 50.0f, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 
-    // 플레이어 생성
-    m_pPlayer = new CTankPlayer(); // 추후 CTankPlayer로 확장 가능
+    m_pPlayer = new CTankPlayer();
     m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f);
     m_pPlayer->SetCamera(pCamera);
     m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 20.0f, -75.0f));
@@ -34,15 +33,13 @@ void CLevel2::BuildObjects()
 
     m_pPlayer->setSize(fBottomHeight, fUpperHeight, fUpperWidth);
 
-    CCubeMesh* pLowerBodyMesh = new CCubeMesh(8.0f, fBottomHeight, 12.0f);   // 밑몸통: 길고 낮게
-    CCubeMesh* pUpperBodyMesh = new CCubeMesh(6.0f, fUpperHeight, 6.0f);    // 위몸통(포탑): 정사각형
-    CCubeMesh* pTurretMesh = new CCubeMesh(1.0f, 1.0f, fUpperWidth);    // 포신: 얇고 긴 총알통
+    CCubeMesh* pLowerBodyMesh = new CCubeMesh(8.0f, fBottomHeight, 12.0f);
+    CCubeMesh* pUpperBodyMesh = new CCubeMesh(6.0f, fUpperHeight, 6.0f);
+    CCubeMesh* pTurretMesh = new CCubeMesh(1.0f, 1.0f, fUpperWidth);
 
-    // 2. CTankPlayer에 메쉬 연결
     m_pPlayer->SetTankMesh(pLowerBodyMesh, pUpperBodyMesh, pTurretMesh);
 
-    // 3. 색깔 설정 (선택)
-    m_pPlayer->SetColor(RGB(0, 100, 0)); // 기본 탱크 색
+    m_pPlayer->SetColor(RGB(200, 100, 0));
 
     // 적 탱크 생성
     for (int i = 0; i < 10; ++i)
@@ -51,12 +48,11 @@ void CLevel2::BuildObjects()
         pEnemy->setSize(fBottomHeight, fUpperHeight, fUpperWidth);
 
 
-        float ex = (rand() % 501) - 250; // -500 ~ +500
+        float ex = (rand() % 501) - 250;
         float ez = (rand() % 501) - 250;
         pEnemy->SetPosition(ex, 0.0f, ez);
 
-        // 랜덤 방향 회전 (Yaw -180 ~ +180도)
-        float yaw = ((rand() % 360) - 180); // -180도 ~ +180도
+        float yaw = ((rand() % 360) - 180);
         pEnemy->Rotate(yaw);
 
         pEnemy->SetTankMesh(pLowerBodyMesh, pUpperBodyMesh, pTurretMesh);
@@ -66,7 +62,7 @@ void CLevel2::BuildObjects()
     for (int i = 0; i < m_pEnemies.size(); ++i)
     {
         CExplosiveObject* pExplosion = new CExplosiveObject();
-        pExplosion->SetActive(false); // 처음에는 비활성
+        pExplosion->SetActive(false);
         m_pExplosions.push_back(pExplosion);
     }
 
@@ -76,7 +72,7 @@ void CLevel2::BuildObjects()
     for (int i = 0; i < 5; ++i)
     {
         CGameObject* pObstacle = new CGameObject();
-        float ox = (rand() % 501) - 250; // -500 ~ +500
+        float ox = (rand() % 501) - 250;
         float oz = (rand() % 501) - 250;
         pObstacle->SetPosition(ox, 8.0f, oz);
 
@@ -85,9 +81,10 @@ void CLevel2::BuildObjects()
         m_pObstacles.push_back(pObstacle);
     }
 
+    // 텍스트 생성
     m_pWinText = new CTextObject(L"YOU WIN!");
-    m_pWinText->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f)); // 0,0 위쪽에 띄움
-    m_pWinText->SetColor(RGB(255, 0, 0)); // 강조 색상
+    m_pWinText->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f));
+    m_pWinText->SetColor(RGB(255, 0, 0));
 }
 
 void CLevel2::ReleaseObjects()
@@ -164,7 +161,7 @@ void CLevel2::Render(HDC hDCFrameBuffer)
         if (explosion->m_bActive)
             explosion->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
     }
-    // 승리 메시지 출력
+
     if (m_pWinText && m_bShowWinMessage) {
         m_pWinText->Render(hDCFrameBuffer, m_pPlayer->GetCamera());
     }
@@ -188,6 +185,10 @@ void CLevel2::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
             break;
         case 'S': case 's':
             m_bShield = !m_bShield;
+            if (m_bShield)
+                m_pPlayer->SetColor(RGB(0, 0, 0));
+            else
+                m_pPlayer->SetColor(RGB(200, 100, 0));
             break;
         case 'W': case 'w':
             m_bShowWinMessage = true;
@@ -219,7 +220,7 @@ void CLevel2::ProcessMouseInput(float dx, float dy, bool bRightButton)
     {
         if (m_pPlayer)
         {
-            m_pPlayer->RotateCameraOffset(dx * 0.5f); // ← dx로 회전, 회전 속도 조정
+            m_pPlayer->RotateCameraOffset(dx * 0.5f);
         }
     }
 }
@@ -228,7 +229,7 @@ void CLevel2::ProcessInput(UCHAR* pKeyBuffer)
 {
     if (!m_pPlayer) return;
     
-    m_pPlayer->setPrePos();
+    m_pPlayer->SetPrePos();
 
     bool bMoved = false;
 
@@ -241,15 +242,15 @@ void CLevel2::ProcessInput(UCHAR* pKeyBuffer)
         bMoved = true;
     }
     if (pKeyBuffer[VK_LEFT] & 0xF0) {
-        m_pPlayer->Rotate(-2.0f);  // 왼쪽 (Yaw -)
+        m_pPlayer->Rotate(-2.0f);
         bMoved = true;
     }
     if (pKeyBuffer[VK_RIGHT] & 0xF0) {
-        m_pPlayer->Rotate(2.0f);   // 오른쪽 (Yaw +)
+        m_pPlayer->Rotate(2.0f);
         bMoved = true;
     }
 
-    if (bMoved) m_pPlayer->Update(0.0f); // 이동 또는 회전이 발생했으면 업데이트
+    if (bMoved) m_pPlayer->Update(0.0f);
 }
 
 void CLevel2::CheckWinCondition()
@@ -290,7 +291,6 @@ void CLevel2::CheckPlayerEnemyCollision()
 {
     if (!m_pPlayer) return;
 
-    // 플레이어의 OBB 갱신
     m_pPlayer->UpdateBoundingBox();
     BoundingOrientedBox playerOBB = m_pPlayer->m_xmOOBB;
 
@@ -298,21 +298,19 @@ void CLevel2::CheckPlayerEnemyCollision()
     {
         CTankEnemy* pEnemy = (*it);
 
-        // 적의 OBB도 갱신
         pEnemy->UpdateBoundingBox();
         BoundingOrientedBox enemyOBB = pEnemy->m_xmOOBB;
 
-        // 충돌 검사
         if (playerOBB.Intersects(enemyOBB))
         {
-            if (m_bShield) // 실드 켜져있으면
+            if (m_bShield)
             {
-                delete pEnemy;         // 적 삭제
+                delete pEnemy;
                 it = m_pEnemies.erase(it);
             }
-            else // 실드 꺼져있으면
+            else
             {
-                m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f); // 플레이어 초기화
+                m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f);
                 break;
             }
         }
@@ -338,21 +336,18 @@ void CLevel2::CheckBulletEnemyCollision()
             {
                 if (ppBullets[i] && ppBullets[i]->m_bActive)
                 {
-                    // 총알과 적의 OBB 충돌 검사
                     if (pEnemy->m_xmOOBB.Intersects(ppBullets[i]->m_xmOOBB))
                     {
-                        // 적 폭발 처리
-                        TriggerExplosion(pEnemy->GetPosition(), pEnemy->m_dwColor); // 색상 유지
+                        TriggerExplosion(pEnemy->GetPosition(), pEnemy->m_dwColor);
 
-                        delete pEnemy;         // 적 삭제
+                        delete pEnemy;
                         enemyIt = m_pEnemies.erase(enemyIt);
 
-                        // 총알 리셋
                         ppBullets[i]->Reset();
 
                         bHit = true;
                         m_pLockedObject = nullptr;
-                        break; // 하나 맞으면 바로 탈출
+                        break;
                     }
                 }
             }
@@ -364,27 +359,42 @@ void CLevel2::CheckBulletEnemyCollision()
 
 void CLevel2::CheckObstacleCollision()
 {
-    // 1. 플레이어 vs 장애물
+    // 플레이어 vs 장애물
     if (m_pPlayer)
     {
-        // 현재 위치 저장
-        XMFLOAT3 prevPos = m_pPlayer->getPrePos();
+        XMFLOAT3 prevPos = m_pPlayer->GetPrePos();
 
-        // 이동 시도
-        m_pPlayer->Animate(0.0f); // 혹시 이동이 반영되었을 수 있으므로 업데이트
+        m_pPlayer->Animate(0.0f);
 
         for (const auto& pObstacle : m_pObstacles)
         {
             if (m_pPlayer->m_xmOOBB.Intersects(pObstacle->m_xmOOBB))
             {
-                // 충돌 발생 시 이전 위치로 되돌리기
                 m_pPlayer->SetPosition(prevPos.x, prevPos.y, prevPos.z);
                 break;
             }
         }
+
+        // 총알 vs 장애물
+        CBulletObject** ppBullets = m_pPlayer->m_ppBullets;
+
+        for (int i = 0; i < BULLETS; ++i)
+        {
+            CBulletObject* pBullet = ppBullets[i];
+            if (!pBullet || !pBullet->m_bActive) continue;
+
+            for (const auto& pObstacle : m_pObstacles)
+            {
+                if (pBullet->m_xmOOBB.Intersects(pObstacle->m_xmOOBB))
+                {
+                    pBullet->Reset();
+                    break;
+                }
+            }
+        }
     }
 
-    // 2. 적탱크 vs 장애물
+    // 적탱크 vs 장애물
     for (auto& pEnemy : m_pEnemies)
     {
         if (!pEnemy || !pEnemy->m_bActive) continue;
@@ -393,25 +403,7 @@ void CLevel2::CheckObstacleCollision()
         {
             if (pEnemy->m_xmOOBB.Intersects(pObstacle->m_xmOOBB))
             {
-                pEnemy->ReverseDirection(); // 반대 방향으로 회전
-                break;
-            }
-        }
-    }
-
-    // 3. 총알 vs 장애물
-    CBulletObject** ppBullets = m_pPlayer->m_ppBullets;
-
-    for (int i = 0; i < BULLETS; ++i)
-    {
-        CBulletObject* pBullet = ppBullets[i];
-        if (!pBullet || !pBullet->m_bActive) continue;
-
-        for (const auto& pObstacle : m_pObstacles)
-        {
-            if (pBullet->m_xmOOBB.Intersects(pObstacle->m_xmOOBB))
-            {
-                pBullet->Reset();
+                pEnemy->ReverseDirection();
                 break;
             }
         }

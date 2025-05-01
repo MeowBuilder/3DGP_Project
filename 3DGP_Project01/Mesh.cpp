@@ -340,56 +340,6 @@ CAirplaneMesh::CAirplaneMesh(float fWidth, float fHeight, float fDepth) : CMesh(
 	m_xmOOBB = BoundingOrientedBox(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(fx, fy, fz), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
-CAxisMesh::CAxisMesh(float fWidth, float fHeight, float fDepth) : CMesh(3)
-{
-	float fHalfWidth = fWidth * 0.5f;
-	float fHalfHeight = fHeight * 0.5f;
-	float fHalfDepth = fDepth * 0.5f;
-
-	CPolygon* pxAxis = new CPolygon(2);
-	pxAxis->SetVertex(0, CVertex(-fHalfWidth, 0.0f, 0.0f));
-	pxAxis->SetVertex(1, CVertex(+fHalfWidth, 0.0f, 0.0f));
-	SetPolygon(0, pxAxis);
-
-	CPolygon* pyAxis = new CPolygon(2);
-	pyAxis->SetVertex(0, CVertex(0.0f, -fHalfWidth, 0.0f));
-	pyAxis->SetVertex(1, CVertex(0.0f, +fHalfWidth, 0.0f));
-	SetPolygon(1, pyAxis);
-
-	CPolygon* pzAxis = new CPolygon(2);
-	pzAxis->SetVertex(0, CVertex(0.0f, 0.0f, -fHalfWidth));
-	pzAxis->SetVertex(1, CVertex(0.0f, 0.0f, +fHalfWidth));
-	SetPolygon(2, pzAxis);
-}
-
-void CAxisMesh::Render(HDC hDCFrameBuffer)
-{
-	XMFLOAT3 f3PreviousProject = CGraphicsPipeline::Project(m_ppPolygons[0]->m_pVertices[0].m_xmf3Position);
-	XMFLOAT3 f3CurrentProject = CGraphicsPipeline::Project(m_ppPolygons[0]->m_pVertices[1].m_xmf3Position);
-	HPEN hPen = ::CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
-	HPEN hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
-	::Draw2DLine(hDCFrameBuffer, f3PreviousProject, f3CurrentProject);
-	::SelectObject(hDCFrameBuffer, hOldPen);
-	::DeleteObject(hPen);
-
-	f3PreviousProject = CGraphicsPipeline::Project(m_ppPolygons[1]->m_pVertices[0].m_xmf3Position);
-	f3CurrentProject = CGraphicsPipeline::Project(m_ppPolygons[1]->m_pVertices[1].m_xmf3Position);
-	hPen = ::CreatePen(PS_SOLID, 0, RGB(0, 0, 255));
-	hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
-	::Draw2DLine(hDCFrameBuffer, f3PreviousProject, f3CurrentProject);
-	::SelectObject(hDCFrameBuffer, hOldPen);
-	::DeleteObject(hPen);
-
-	f3PreviousProject = CGraphicsPipeline::Project(m_ppPolygons[2]->m_pVertices[0].m_xmf3Position);
-	f3CurrentProject = CGraphicsPipeline::Project(m_ppPolygons[2]->m_pVertices[1].m_xmf3Position);
-	hPen = ::CreatePen(PS_SOLID, 0, RGB(0, 255, 0));
-	hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
-	::Draw2DLine(hDCFrameBuffer, f3PreviousProject, f3CurrentProject);
-	::SelectObject(hDCFrameBuffer, hOldPen);
-	::DeleteObject(hPen);
-}
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CRailMesh::CRailMesh(float fLength, float fWidth, float fHeight)
@@ -397,7 +347,6 @@ CRailMesh::CRailMesh(float fLength, float fWidth, float fHeight)
 	m_nPolygons = 6;
 	m_ppPolygons = new CPolygon * [m_nPolygons];
 
-	// 바닥 판자 (기본 박스 모양)
 	CVertex vertices[8] = {
 		CVertex(-fWidth, -fHeight, -fLength), CVertex(fWidth, -fHeight, -fLength),
 		CVertex(fWidth, -fHeight, fLength),  CVertex(-fWidth, -fHeight, fLength),
@@ -405,7 +354,6 @@ CRailMesh::CRailMesh(float fLength, float fWidth, float fHeight)
 		CVertex(fWidth, fHeight, fLength),  CVertex(-fWidth, fHeight, fLength)
 	};
 
-	// 각 면을 구성 (6면)
 	int faces[6][4] = {
 		{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4},
 		{1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}
@@ -416,9 +364,6 @@ CRailMesh::CRailMesh(float fLength, float fWidth, float fHeight)
 		for (int j = 0; j < 4; ++j)
 			m_ppPolygons[i]->SetVertex(j, vertices[faces[i][j]]);
 	}
-
-	// AABB 설정 (선택사항)
-	m_xmOOBB = BoundingOrientedBox(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(fWidth, fHeight, fLength), XMFLOAT4(0, 0, 0, 1));
 }
 
 CRailMesh::~CRailMesh()

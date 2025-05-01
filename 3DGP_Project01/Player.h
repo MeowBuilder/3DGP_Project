@@ -77,10 +77,11 @@ class CTankPlayer : public CPlayer
 public:
     CTankPlayer();
     virtual ~CTankPlayer();
+
 	void SetCameraOffset(XMFLOAT3& xmf3CameraOffset);
 
-	void setPrePos() { m_xmf3PrePos = m_xmf3Position; };
-	XMFLOAT3 getPrePos() { return m_xmf3PrePos; };
+	void SetPrePos() { m_xmf3PrePos = m_xmf3Position; };
+	XMFLOAT3 GetPrePos() { return m_xmf3PrePos; };
 
     virtual void Animate(float fElapsedTime);
     virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
@@ -104,18 +105,13 @@ public:
 	CBulletObject* m_ppBullets[BULLETS];
 
 protected:
-    CMesh* m_pMeshLowerBody = nullptr; // 밑몸통
-    CMesh* m_pMeshUpperBody = nullptr; // 위몸통 (포탑)
-    CMesh* m_pMeshTurret = nullptr;    // 포신 (캐논)
-
-    float m_fUpperRotation = 0.0f; // 위몸통 Y축 회전각 (degrees)
-    float m_fTurretPitch = 0.0f;   // 포신 X축 상하 회전각 (degrees)
+    CMesh* m_pMeshLowerBody = nullptr;
+    CMesh* m_pMeshUpperBody = nullptr;
+    CMesh* m_pMeshTurret = nullptr;
 
 	float m_fBottomHeight = 0.0f;
 	float m_fUpperHeight = 0.0f;
 	float m_fUpperWidth = 0.0f;
-
-	float m_fTopYaw = 0.0f; // 윗몸통+포신용 Yaw 누적 회전 값
 
 	XMFLOAT3 m_xmf3TopRight = { 1.0f, 0.0f, 0.0f };
 	XMFLOAT3 m_xmf3TopUp = { 0.0f, 1.0f, 0.0f };
@@ -123,5 +119,5 @@ protected:
 
 	XMFLOAT3 m_xmf3PrePos = { 0.0f, 0.0f, 0.0f };
 
-	XMFLOAT3 m_xmf3BaseCameraOffset; // ★ 고정된 기본 오프셋 추가
+	XMFLOAT3 m_xmf3BaseCameraOffset;
 };

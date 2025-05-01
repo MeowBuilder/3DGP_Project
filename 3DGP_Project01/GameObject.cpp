@@ -371,7 +371,7 @@ void CTextCharacterObject::BuildCharacterShape(wchar_t ch)
 
 	for (int y = 0; y < GLYPH_HEIGHT; ++y)
 	{
-		const wchar_t* line = shape[GLYPH_HEIGHT - 1 - y]; // top line → y=6
+		const wchar_t* line = shape[GLYPH_HEIGHT - 1 - y];
 		for (int x = 0; x < GLYPH_WIDTH; ++x)
 		{
 			if (line[x] == L'#')
@@ -381,10 +381,9 @@ void CTextCharacterObject::BuildCharacterShape(wchar_t ch)
 		}
 	}
 
-	// 중심 정렬 보정 (선택사항)
 	for (auto& cube : m_Cubes) {
 		XMFLOAT3 pos = cube->GetPosition();
-		pos.x -= 3.0f; // 중심 맞추기
+		pos.x -= 3.0f;
 		pos.y -= 3.0f;
 		cube->SetPosition(pos);
 	}
@@ -443,10 +442,8 @@ int CTextCharacterObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition,
 {
 	int nIntersected = 0;
 
-	for (auto& cube : m_Cubes)  // 각 큐브에 대해 레이와의 교차 여부를 검사
+	for (auto& cube : m_Cubes)
 	{
-		// 레이와의 교차 여부 검사
-
 		XMFLOAT3 cubeLocal = cube->GetPosition();
 		XMFLOAT3 rotatedLocal = Vector3::TransformCoord(cubeLocal, m_xmf4x4Rotation);
 		XMFLOAT3 finalPos = Vector3::Add(parentOffset, rotatedLocal);
@@ -460,7 +457,7 @@ int CTextCharacterObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition,
 		nIntersected = cube->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, pfHitDistance);
 		cube->SetPosition(cubeLocal);
 
-		if (nIntersected > 0) break;  // 교차가 일어나면 바로 반환
+		if (nIntersected > 0) break;
 	}
 
 	return nIntersected;
@@ -484,7 +481,7 @@ CTextObject::~CTextObject()
 void CTextObject::SetText(const std::wstring& text)
 {
 	float xOffset = 0.0f;
-	const float spacing = 8.0f; // 글자 간 간격 (7x7 기준 + 여유)
+	const float spacing = 8.0f;
 
 	for (wchar_t ch : text)
 	{
@@ -507,15 +504,7 @@ void CTextObject::Animate(float fElapsedTime)
 	if (!m_bActive) return;
 
 	m_fRotationAngle += 45.0f * fElapsedTime;
-	for (auto& ch : m_Characters)
-		ch->Animate(fElapsedTime);
-}
 
-void CTextObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
-{
-	if (!m_bActive) return;
-
-	// 1. 텍스트 중심점 계산 (중앙 문자 기준 + 깊이 보정)
 	XMFLOAT3 center = { 0, 0, 0 };
 	if (!m_Characters.empty())
 	{
@@ -523,7 +512,6 @@ void CTextObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		center = m_Characters[mid]->GetPosition();
 	}
 
-	// 2. 회전 행렬 생성
 	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3RotationAxis), XMConvertToRadians(m_fRotationAngle));
 	XMMATRIX mtxTransToOrigin = XMMatrixTranslation(-center.x, -center.y, -center.z);
 	XMMATRIX mtxTransBack = XMMatrixTranslation(center.x, center.y, center.z);
@@ -543,8 +531,20 @@ void CTextObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
 		XMFLOAT3 rotatedCharPos;
 		XMStoreFloat3(&rotatedCharPos, XMVectorAdd(vWorld, XMLoadFloat3(&basePos)));
 
-		ch->SetRotationMatrix(xmf4Rotation); // 회전 행렬 전달
-		ch->Render(hDCFrameBuffer, pCamera, rotatedCharPos);
+		ch->SetRotationMatrix(xmf4Rotation);
+		ch->SetRotatedPos(rotatedCharPos);
+	}
+
+	for (auto& ch : m_Characters)
+		ch->Animate(fElapsedTime);
+}
+
+void CTextObject::Render(HDC hDCFrameBuffer, CCamera* pCamera)
+{
+	if (!m_bActive) return;
+	for (auto ch : m_Characters)
+	{
+		ch->Render(hDCFrameBuffer, pCamera, ch->GetRotatedPos());
 	}
 }
 
@@ -552,33 +552,17 @@ int CTextObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, XMMATRIX
 {
 	if (!m_bActive) return 0;
 
-	// 1. 텍스트 중심점 계산 (중앙 문자 기준 + 깊이 보정)
-	XMFLOAT3 center = getCenter();
-
-	// 2. 회전 행렬 생성
-	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3RotationAxis), XMConvertToRadians(m_fRotationAngle));
-	XMMATRIX mtxTransToOrigin = XMMatrixTranslation(-center.x, -center.y, -center.z);
-	XMMATRIX mtxTransBack = XMMatrixTranslation(center.x, center.y, center.z);
-	XMMATRIX mtxWorld = mtxTransToOrigin * mtxRotate * mtxTransBack;
-
-	XMFLOAT3 basePos = GetPosition();
-
 	int nIntersected = 0;
 
 	for (auto ch : m_Characters)
 	{
-		XMFLOAT3 charLocal = ch->GetPosition();
-		XMVECTOR vLocal = XMVectorSet(charLocal.x, charLocal.y, charLocal.z, 1.0f);
-		XMVECTOR vWorld = XMVector3TransformCoord(vLocal, mtxWorld);
-
-		XMFLOAT3 rotatedCharPos;
-		XMStoreFloat3(&rotatedCharPos, XMVectorAdd(vWorld, XMLoadFloat3(&basePos)));
+		XMFLOAT3 rotatedCharPos = ch->GetRotatedPos();
 
 		nIntersected = ch->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, pfHitDistance, rotatedCharPos);
-		if (nIntersected > 0) return nIntersected;  // 교차가 일어난 오브젝트 반환
+		if (nIntersected > 0) return nIntersected;
 	}
 
-	return nIntersected;  // 교차하지 않으면 0 반환
+	return nIntersected;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
