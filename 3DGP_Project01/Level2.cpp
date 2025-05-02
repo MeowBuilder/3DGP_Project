@@ -41,7 +41,6 @@ void CLevel2::BuildObjects()
 
     m_pPlayer->SetColor(RGB(200, 100, 0));
 
-    // 利 攀农 积己
     for (int i = 0; i < 10; ++i)
     {
         CTankEnemy* pEnemy = new CTankEnemy();
