@@ -74,9 +74,20 @@ public:
 
 class CTankPlayer : public CPlayer
 {
+private:
+	bool m_bAutoFire = false;
+	float m_fAutoFireElapsed = 0.0f;
+	float m_fAutoFireInterval = 1.0f;
+	bool m_bShield = false;
 public:
     CTankPlayer();
     virtual ~CTankPlayer();
+
+	void ToggleAutoFire() { m_bAutoFire = !m_bAutoFire; }
+	void AutoFire(float fElapsedTime, CGameObject* pLockedObject);
+
+	void ToggleShield();
+	bool GetbShield() { return m_bShield; }
 
 	void SetCameraOffset(XMFLOAT3& xmf3CameraOffset);
 

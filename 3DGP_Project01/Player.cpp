@@ -274,7 +274,6 @@ void CTankPlayer::Rotate(float fYaw)
 
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
 	m_xmf3Right = Vector3::Normalize(m_xmf3Right);
-	
 }
 
 void CTankPlayer::Animate(float fElapsedTime)
@@ -430,6 +429,28 @@ void CTankPlayer::UpdateTopParts()
 
 	m_xmf3TopUp = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3TopRight = Vector3::Normalize(Vector3::CrossProduct(m_xmf3TopUp, m_xmf3TopLook));
+}
+
+void CTankPlayer::ToggleShield()
+{
+	m_bShield = !m_bShield;
+	if (m_bShield)
+		SetColor(RGB(0, 0, 0));
+	else
+		SetColor(RGB(200, 100, 0));
+}
+
+void CTankPlayer::AutoFire(float fElapsedTime,CGameObject* pLockedObject)
+{
+	if (m_bAutoFire)
+	{
+		m_fAutoFireElapsed += fElapsedTime;
+		if (m_fAutoFireElapsed >= m_fAutoFireInterval)
+		{
+			FireBullet(pLockedObject);
+			m_fAutoFireElapsed = 0.0f;
+		}
+	}
 }
 
 void CTankPlayer::FireBullet(CGameObject* pLockedObject)

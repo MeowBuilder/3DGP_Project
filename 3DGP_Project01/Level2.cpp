@@ -112,19 +112,13 @@ void CLevel2::ReleaseObjects()
 
 void CLevel2::Animate(float fElapsedTime)
 {
-    if (m_pPlayer) m_pPlayer->Animate(fElapsedTime);
+    if (m_pPlayer)
+    {
+        m_pPlayer->Animate(fElapsedTime);
+        m_pPlayer->AutoFire(fElapsedTime, m_pLockedObject);
+    }
     for (auto& enemy : m_pEnemies)
         enemy->Animate(fElapsedTime);
-
-    if (m_bAutoFire)
-    {
-        m_fAutoFireElapsed += fElapsedTime;
-        if (m_fAutoFireElapsed >= m_fAutoFireInterval)
-        {
-            m_pPlayer->FireBullet(m_pLockedObject);
-            m_fAutoFireElapsed = 0.0f;
-        }
-    }
 
     for (auto& obstacle : m_pObstacles)
         obstacle->Animate(fElapsedTime);
@@ -180,21 +174,17 @@ void CLevel2::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPa
         switch (wParam)
         {
         case 'A': case 'a':
-            m_bAutoFire = !m_bAutoFire;
+            m_pPlayer->ToggleAutoFire();
             break;
         case 'S': case 's':
-            m_bShield = !m_bShield;
-            if (m_bShield)
-                m_pPlayer->SetColor(RGB(0, 0, 0));
-            else
-                m_pPlayer->SetColor(RGB(200, 100, 0));
+            m_pPlayer->ToggleShield();
             break;
         case 'W': case 'w':
             m_bShowWinMessage = true;
             break;
         case VK_ESCAPE:
             m_nNextSceneID = 1;
-            m_bSceneChange = true;
+            m_bSceneFinished = true;
             break;
         }
         break;
@@ -302,7 +292,7 @@ void CLevel2::CheckPlayerEnemyCollision()
 
         if (playerOBB.Intersects(enemyOBB))
         {
-            if (m_bShield)
+            if (m_pPlayer->GetbShield())
             {
                 delete pEnemy;
                 it = m_pEnemies.erase(it);
@@ -362,8 +352,6 @@ void CLevel2::CheckObstacleCollision()
     if (m_pPlayer)
     {
         XMFLOAT3 prevPos = m_pPlayer->GetPrePos();
-
-        m_pPlayer->Animate(0.0f);
 
         for (const auto& pObstacle : m_pObstacles)
         {

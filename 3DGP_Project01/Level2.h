@@ -9,9 +9,6 @@ public:
     CLevel2();
     virtual ~CLevel2();
 
-    virtual bool IsFinished() const override { return m_bSceneChange; }
-    virtual int GetNextSceneID() const override { return m_nNextSceneID; }
-
     virtual void BuildObjects() override;
     virtual void ReleaseObjects() override;
     virtual void Animate(float fElapsedTime) override;
@@ -34,15 +31,7 @@ private:
 
     CGameObject* m_pLockedObject = nullptr;
 
-    bool m_bShield = false;
     bool m_bShowWinMessage = false;
-
-    bool m_bSceneChange = false;
-    int m_nNextSceneID = -1;
-
-    bool m_bAutoFire = false;
-    float m_fAutoFireElapsed = 0.0f;   // 자동 공격 시간 누적
-    float m_fAutoFireInterval = 1.0f;  // 1초에 한 발
 
     void CheckPlayerEnemyCollision();
     void CheckBulletEnemyCollision();

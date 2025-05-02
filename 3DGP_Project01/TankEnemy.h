@@ -17,6 +17,6 @@ public:
 private:
     float m_fElapsedTime = 0.0f;
     float m_fRandomMoveTime = 1.0f;
-    float m_fRotationAngle = 0.0f; // 회전해야 할 각도 (도 단위)
+    float m_fRotationAngle = 0.0f;
     int m_iMoveDirection = 1;
 };
